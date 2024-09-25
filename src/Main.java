@@ -6,7 +6,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         // 환영 메시지 출력
-        System.out.print("Hello and welcome! ");
+        System.out.print("Hello and welcome!! ");
 
         // 정수 입력받기
         int a = scanner.nextInt();
