@@ -330,7 +330,6 @@ public class Framework extends Canvas {
     private int getHighestScore() {
         // (추가된 부분)
         // 최고 점수를 반환하는 로직을 구현합니다. 예시로 0을 반환했습니다.
-        return 0; // 실제 구현 필요
+        return 0; // 실제 구현 필요 현재는 재시작할 때마다 0점으로 초기화
     }
-
 }
