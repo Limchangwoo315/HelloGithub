@@ -1,8 +1,6 @@
 package kr.jbnu.se.std;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -70,7 +68,7 @@ public class Framework extends Canvas {
     // The actual game
     private Game game;
     
-    
+
     /**
      * Image for menu.
      */
@@ -207,6 +205,7 @@ public class Framework extends Canvas {
     @Override
     public void Draw(Graphics2D g2d)
     {
+
         switch (gameState)
         {
             case PLAYING:
@@ -222,6 +221,10 @@ public class Framework extends Canvas {
                 g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
                 g2d.setColor(Color.white);
                 g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
+                // (추가된 부분)
+                g2d.setFont(new Font("monospaced", Font.BOLD, 24));
+                g2d.setColor(Color.white);
+                g2d.drawString("HIGHEST SCORE: " + getHighestScore(), frameWidth / 2 - 100, frameHeight / 2 + 50); // 메인화면에 최고 점수 표시
             break;
             case OPTIONS:
                 //...
@@ -323,4 +326,11 @@ public class Framework extends Canvas {
             break;
         }
     }
+    // 최고 점수를 얻는 메서드를 추가합니다.
+    private int getHighestScore() {
+        // (추가된 부분)
+        // 최고 점수를 반환하는 로직을 구현합니다. 예시로 0을 반환했습니다.
+        return 0; // 실제 구현 필요
+    }
+
 }
