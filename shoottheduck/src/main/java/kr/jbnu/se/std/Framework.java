@@ -1,8 +1,6 @@
 package kr.jbnu.se.std;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -69,8 +67,8 @@ public class Framework extends Canvas {
     
     // The actual game
     private Game game;
-    
-    
+
+    private Player player;
     /**
      * Image for menu.
      */
@@ -80,7 +78,7 @@ public class Framework extends Canvas {
     public Framework ()
     {
         super();
-        
+        player = new Player();
         gameState = GameState.VISUALIZING;
         
         //We start game in new thread.

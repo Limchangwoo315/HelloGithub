@@ -37,6 +37,7 @@ public class Player {
     }
 
     public void addScore(int baseScore, boolean duckHit) {
+        // 콤보 계산
         if (duckHit) {
             if (comboCount > 0) { // 콤보가 이미 있는 경우
                 comboMultiplier *= 1.15; // 콤보를 유지하며 증가
@@ -51,13 +52,17 @@ public class Player {
 
         // 콤보 점수를 반영한 최종 점수 계산
         int comboScore = (int) (baseScore * comboMultiplier); // 기본 점수에 콤보 배수 적용
+
         if (comboCount > 1) { // 콤보가 2 이상인 경우에만 콤보 점수를 추가
             currentScore += comboScore; // 현재 점수에 콤보 점수를 반영
         } else {
             currentScore += baseScore; // 첫 번째 발사이거나 콤보가 없는 경우 기본 점수만 추가
         }
+
+        // 최고 점수 업데이트
         updateHighestScore();
     }
+
 
     public void incrementCombo() {
         comboCount++;
