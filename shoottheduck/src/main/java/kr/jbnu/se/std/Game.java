@@ -39,10 +39,13 @@ public class Game {
     private BufferedImage sightImg;
     private int sightImgMiddleWidth;
     private int sightImgMiddleHeight;
+    private Player player; // (추가된 부분)
 
     public Game()
     {
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
+        // (추가된 부분)
+        player = new Player(); // Player 객체 초기화
 
         Thread threadForInitGame = new Thread() {
             @Override
@@ -70,6 +73,8 @@ public class Game {
 
         lastTimeShoot = 0;
         timeBetweenShots = Framework.secInNanosec / 3;
+
+        player.resetCurrentScore(); // (추가된 부분)
     }
 
     private void LoadContent()
@@ -106,6 +111,8 @@ public class Game {
         shoots = 0;
 
         lastTimeShoot = 0;
+
+        player.resetCurrentScore(); // (추가된 부분)
     }
 
     public void UpdateGame(long gameTime, Point mousePosition)
@@ -155,7 +162,7 @@ public class Game {
                         break;
                     }
                 }
-
+                player.setCurrentScore(score); // (추가된 부분) 현재 점수를 플레이어 클래스에 업데이트
                 lastTimeShoot = System.nanoTime();
             }
         }
@@ -185,7 +192,7 @@ public class Game {
         g2d.drawString("SHOOTS: " + shoots, 299, 21);
         g2d.drawString("SCORE: " + score, 440, 21);
 
-        g2d.drawString("HIGHEST SCORE: " + getHighestScore(), 560, 21); // 최고 점수 표시
+        g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), 580, 21); // (추가된 부분)
     }
 
     public void DrawGameOver(Graphics2D g2d, Point mousePosition)
@@ -209,4 +216,3 @@ public class Game {
     }
 
 }
-
