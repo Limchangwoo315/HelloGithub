@@ -8,11 +8,14 @@ import java.io.*;
 public class Player {
     private int highestScore;
     private int currentScore;
+    private double comboMultiplier; // 콤보 배수
+    private int comboCount; // (추가된 부분) 콤보 횟수 관리
     private static final String SCORE_FILE = "highestScore.txt";
 
     public Player() {
-        this.highestScore = loadHighestScore(); // 게임 시작 시 최고 점수를 불러옴
+        this.highestScore = loadHighestScore();
         this.currentScore = 0;
+        this.comboMultiplier = 1.0;
     }
 
     public int getHighestScore() {
@@ -28,10 +31,34 @@ public class Player {
         updateHighestScore();
     }
 
+    // 오버로딩된 메서드: 점수를 추가하고 duckHit는 기본값 false
+    public void addScore(int baseScore) {
+        addScore(baseScore, false); // 기본값 false로 메서드 호출
+    }
+
+    public void addScore(int baseScore, boolean duckHit) {
+        if (duckHit) {
+            currentScore += baseScore * comboMultiplier; // 콤보 점수를 반영하여 추가
+            comboMultiplier *= 1.50; // 콤보를 유지하며 증가
+        } else {
+            comboMultiplier = 1.0; // 오리를 맞추지 못한 경우 콤보 초기화
+        }
+        setCurrentScore(currentScore); // 현재 점수를 설정
+    }
+
+
+    public void incrementCombo() {
+        comboCount++;
+    }
+
+    public void resetCombo() {
+        comboCount = 0;
+    }
+
     private void updateHighestScore() {
         if (currentScore > highestScore) {
             highestScore = currentScore;
-            saveHighestScore(); // 최고 점수가 갱신되면 파일에 저장
+            saveHighestScore();
         }
     }
 
@@ -47,7 +74,6 @@ public class Player {
         try (BufferedReader reader = new BufferedReader(new FileReader(SCORE_FILE))) {
             return Integer.parseInt(reader.readLine());
         } catch (IOException | NumberFormatException e) {
-            // 파일이 없거나, 형식이 잘못된 경우 0으로 초기화
             return 0;
         }
     }

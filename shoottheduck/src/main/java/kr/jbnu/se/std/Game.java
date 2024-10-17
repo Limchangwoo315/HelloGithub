@@ -144,6 +144,7 @@ public class Game {
             if(System.nanoTime() - lastTimeShoot >= timeBetweenShots)
             {
                 shoots++;
+                boolean duckHit = false;
 
                 for(int i = 0; i < ducks.size(); i++)
                 {
@@ -152,17 +153,17 @@ public class Game {
                     {
                         killedDucks++;
                         score += ducks.get(i).score;
+                        player.addScore(ducks.get(i).score, true); // (추가된 부분) 콤보 적용된 점수 추가
                         ducks.remove(i);
-
-                        // 최고 점수를 갱신
-                        if (score > highestScore) {
-                            highestScore = score;
-                        }
-
                         break;
                     }
                 }
+                if (!duckHit) {
+                    player.resetCombo(); // (추가된 부분) 오리 명중 실패 시 콤보 초기화
+                }
+
                 player.setCurrentScore(score); // (추가된 부분) 현재 점수를 플레이어 클래스에 업데이트
+
                 lastTimeShoot = System.nanoTime();
             }
         }
