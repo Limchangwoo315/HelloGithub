@@ -27,11 +27,13 @@ public class Duck {
      * Speed of the duck?
      * How many points is a duck worth?
      */
+
+
     public static int[][] duckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60), -2, 20},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65), -3, 30},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70), -4, 40},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78), -5, 50}
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60), -1, 20},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65), -2, 30},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70), -3, 40},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78), -3, 50}   //맨 아래 오리가 너무 빨라 숫자 조정
     };
 
     /**
@@ -73,6 +75,13 @@ public class Duck {
      * @param score How many points this duck is worth?
      * @param duckImg Image of the duck.
      */
+
+    private boolean isStunned = false; // 기절 여부를 나타내는 변수
+    private long stunnedStartTime = 0; // 기절 시작 시간
+    private static final long STUN_DURATION = 1500000000L; // 1.5초 (나노초)
+
+
+
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
         this.x = x;
         this.y = y;
@@ -86,6 +95,11 @@ public class Duck {
      */
     public void Update() {
         x += speed;
+        updateStunStatus();
+
+        if (!isStunned) {
+            x += speed;
+        }
     }
 
     /**
@@ -100,4 +114,20 @@ public class Duck {
     public int getScore() { // (최고 점수)
         return score; // (최고 점수)
     } // (최고 점수)
+
+    public void stun() { //기절
+        isStunned = true;
+        stunnedStartTime = System.nanoTime();
+    }
+
+    public void updateStunStatus() {
+        if (isStunned && System.nanoTime() - stunnedStartTime >= STUN_DURATION) {
+            isStunned = false;
+        }
+    }
+
+    public BufferedImage getImage() { //오리 이미지 반환
+        return duckImg;
+    }
 }
+
