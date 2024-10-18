@@ -166,6 +166,14 @@ public class Game {
                 if (hitBox.contains(mousePosition)) {
                     killedDucks++; // 오리 명중 시 증가
                     player.addScore(duck.getScore(), true); // 플레이어 점수 업데이트
+
+                    // 기절 상태를 설정할 오리 판단
+                    for (Duck d : ducks) {
+                        if (d.getHitBox().intersects(hitBox) && d != duck) {
+                            d.stun(); // 겹친 오리 기절
+                        }
+                    }
+
                     ducks.remove(i); // 오리 제거
                     duckHit = true;
 
