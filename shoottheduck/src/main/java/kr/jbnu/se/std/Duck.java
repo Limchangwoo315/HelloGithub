@@ -90,10 +90,20 @@ public class Duck {
         this.duckImg = duckImg;
     }
 
+    public void adjustSpeedBasedOnY() {
+        if (y < Framework.frameHeight * 0.6) {
+            speed = -1; // 위쪽 오리 속도
+        } else if (y < Framework.frameHeight * 0.7) {
+            speed = -2; // 중간 오리 속도
+        } else {
+            speed = -3; // 아래쪽 오리 속도
+        }
+    }
     /**
      * Move the duck.
      */
     public void Update() {
+        adjustSpeedBasedOnY(); // y값에 따라 속도 조정
         if (!isStunned) {
             x += speed; // 속도에 따라 왼쪽으로 이동
         }
@@ -135,6 +145,5 @@ public class Duck {
     public Rectangle getHitBox() {
         return new Rectangle(x, y, duckImg.getWidth(), duckImg.getHeight());
     }
-
 }
 
