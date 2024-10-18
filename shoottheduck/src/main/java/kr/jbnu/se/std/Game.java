@@ -165,10 +165,19 @@ public class Game {
                 // 마우스 포인터가 히트박스 내에 있는지 확인
                 if (hitBox.contains(mousePosition)) {
                     killedDucks++; // 오리 명중 시 증가
-                    score += duck.getScore(); // 점수 증가
                     player.addScore(duck.getScore(), true); // 플레이어 점수 업데이트
                     ducks.remove(i); // 오리 제거
                     duckHit = true;
+
+                    for (int j = i + 1; j < ducks.size(); j++) {
+                        Duck nextDuck = ducks.get(j);
+                        // 오리가 겹쳐 있을 경우
+                        if (duck.getHitBox().intersects(nextDuck.getHitBox())) {
+                            nextDuck.stun(); // 기절시키기
+                            break; // 한 마리만 기절
+                        }
+                    }
+
                     break;
                 }
             }

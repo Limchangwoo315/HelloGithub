@@ -16,6 +16,7 @@ public class Player {
         this.highestScore = loadHighestScore();
         this.currentScore = 0;
         this.comboMultiplier = 1.0;
+        this.comboCount = 0; // 초기화
     }
 
     public int getHighestScore() {
@@ -29,11 +30,6 @@ public class Player {
     public void setCurrentScore(int score) {
         this.currentScore = score;
         updateHighestScore();
-    }
-
-    // 오버로딩된 메서드: 점수를 추가하고 duckHit는 기본값 false
-    public void addScore(int baseScore) {
-        addScore(baseScore, false); // 기본값 false로 메서드 호출
     }
 
     public void addScore(int baseScore, boolean duckHit) {
@@ -53,11 +49,11 @@ public class Player {
         // 콤보 점수를 반영한 최종 점수 계산
         int comboScore = (int) (baseScore * comboMultiplier); // 기본 점수에 콤보 배수 적용
 
-        if (comboCount > 1) { // 콤보가 2 이상인 경우에만 콤보 점수를 추가
+//        if (duckHit) {
             currentScore += comboScore; // 현재 점수에 콤보 점수를 반영
-        } else {
-            currentScore += baseScore; // 첫 번째 발사이거나 콤보가 없는 경우 기본 점수만 추가
-        }
+//        } else {
+//            currentScore += baseScore; // 오리를 놓친 경우 기본 점수만 추가
+//        }
 
         // 최고 점수 업데이트
         updateHighestScore();

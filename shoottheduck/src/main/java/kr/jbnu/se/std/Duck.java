@@ -1,6 +1,6 @@
 package kr.jbnu.se.std;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
@@ -124,9 +124,17 @@ public class Duck {
             isStunned = false;
         }
     }
+    public boolean isStunned() {
+        return isStunned;
+    }
 
     public BufferedImage getImage() { //오리 이미지 반환
         return duckImg;
     }
+
+    public Rectangle getHitBox() {
+        return new Rectangle(x, y, duckImg.getWidth(), duckImg.getHeight());
+    }
+
 }
 
