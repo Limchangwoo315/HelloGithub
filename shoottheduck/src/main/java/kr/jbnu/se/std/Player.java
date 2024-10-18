@@ -98,4 +98,8 @@ public class Player {
     public void resetCurrentScore() {
         this.currentScore = 0;
     }
+
+    public int getScore() {
+    return currentScore;
+    }
 }

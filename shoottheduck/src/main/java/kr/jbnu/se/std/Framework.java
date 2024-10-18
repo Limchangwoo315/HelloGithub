@@ -78,6 +78,8 @@ public class Framework extends Canvas {
 
     private BackgroundMusic backgroundMusic; //배경음악
 
+    private Cloud cloud;
+
     public Framework ()
     {
         super();
@@ -87,6 +89,9 @@ public class Framework extends Canvas {
 
         backgroundMusic = new BackgroundMusic();
         backgroundMusic.play(); // Start the background music
+
+        cloud = new Cloud();
+
         gameState = GameState.VISUALIZING;
 
         //We start game in new thread.
@@ -216,6 +221,12 @@ public class Framework extends Canvas {
         {
             case PLAYING:
                 game.Draw(g2d, mousePosition());
+                if (player.getScore() >= 1500 && player.getScore() < 3500) {
+                    cloud.setVisible(true); // 점수가 1500 이상 3500 미만일 때 구름 표시
+                } else {
+                    cloud.setVisible(false); // 그 외의 경우 구름 숨김
+                }
+                cloud.draw(g2d); // 구름 그리기
                 break;
             case GAMEOVER:
                 game.DrawGameOver(g2d, mousePosition());
@@ -242,7 +253,6 @@ public class Framework extends Canvas {
         }
         // Sight 이미지 그리기
         sight.draw(g2d);
-
     }
 
     /**
