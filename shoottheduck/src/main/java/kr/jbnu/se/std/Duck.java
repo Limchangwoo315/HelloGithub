@@ -94,13 +94,12 @@ public class Duck {
      * Move the duck.
      */
     public void Update() {
-        x += speed;
-        updateStunStatus();
-
         if (!isStunned) {
-            x += speed;
+            x += speed; // 속도에 따라 왼쪽으로 이동
         }
+        updateStunStatus();
     }
+
 
     /**
      * Draw the duck to the screen.

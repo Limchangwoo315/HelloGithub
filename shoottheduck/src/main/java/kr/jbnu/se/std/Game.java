@@ -14,12 +14,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-
-/**
- * Actual game.
- *
- * @author www.gametutorial.net
- */
+import javax.swing.JOptionPane;
 
 public class Game {
 
@@ -29,7 +24,7 @@ public class Game {
     private int runawayDucks;
     private int killedDucks;
     private int score;
-    private int highestScore; // 최고 점수를 저장할 변수
+    private int highestScore; // 최고 점수 저장
     private int shoots;
     private long lastTimeShoot;
     private long timeBetweenShots;
@@ -39,17 +34,18 @@ public class Game {
     private BufferedImage sightImg;
     private int sightImgMiddleWidth;
     private int sightImgMiddleHeight;
-// Player 객체 초기화
-    private Player player = new Player(); // (추가된 부분)
+    private Player player = new Player(); // 플레이어 객체
     private boolean firstShot = true;
+    private int level; // 사용자가 선택한 레벨 저장
 
-    public Game()
-    {
+    // 생성자: 레벨 선택과 초기화
+    public Game() {
+        selectLevel(); // 레벨 선택
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
 
         Thread threadForInitGame = new Thread() {
             @Override
-            public void run(){
+            public void run() {
                 Initialize();
                 LoadContent();
                 Framework.gameState = Framework.GameState.PLAYING;
@@ -58,29 +54,43 @@ public class Game {
         threadForInitGame.start();
     }
 
-    private void Initialize()
-    {
+    // 레벨 선택 창을 띄우는 메서드
+    private void selectLevel() {
+        String[] options = { "1", "2", "3", "4", "5" };
+        String selectedLevel = (String) JOptionPane.showInputDialog(
+                null, "Select Level:", "Level Selection",
+                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+        if (selectedLevel != null) {
+            level = Integer.parseInt(selectedLevel);
+        } else {
+            level = 1; // 기본값
+        }
+        System.out.println("Selected Level: " + level);
+    }
+
+    // 게임 초기화
+    private void Initialize() {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
 
-        ducks = new ArrayList<Duck>();
-
+        ducks = new ArrayList<>();
         runawayDucks = 0;
         killedDucks = 0;
         score = 0;
-        highestScore = 0; // 최고 점수 초기화
+        highestScore = 0;
         shoots = 0;
-
         lastTimeShoot = 0;
-        timeBetweenShots = Framework.secInNanosec / 3;
 
-        player.resetCurrentScore(); // (추가된 부분)
+        // 레벨에 따른 오리 생성 간격 조정 (최소 나누기 1 보장)
+        timeBetweenShots = Framework.secInNanosec / Math.max(1, (5 - level));
+
+        player.resetCurrentScore();
     }
 
-    private void LoadContent()
-    {
-        try
-        {
+    // 게임 리소스 로드
+    private void LoadContent() {
+        try {
             URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
             backgroundImg = ImageIO.read(backgroundImgUrl);
 
@@ -94,108 +104,101 @@ public class Game {
             sightImg = ImageIO.read(sightImgUrl);
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void RestartGame()
-    {
+    // 게임 재시작
+    public void RestartGame() {
         ducks.clear();
         Duck.lastDuckTime = 0;
-
         runawayDucks = 0;
         killedDucks = 0;
         score = 0;
         shoots = 0;
-
         lastTimeShoot = 0;
 
-        player.resetCurrentScore(); // (추가된 부분)
+        player.resetCurrentScore();
     }
 
-    public void UpdateGame(long gameTime, Point mousePosition)
-    {
+    // 게임 업데이트
+    public void UpdateGame(long gameTime, Point mousePosition) {
+        // 오리 생성 간격이 지났는지 확인하고 새 오리 추가
+        if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+            int duckSpeed = level; // 레벨에 따라 오리 속도 설정
 
-
-        if(System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks)
-        {
-            ducks.add(new Duck(Duck.duckLines[Duck.nextDuckLines][0] + random.nextInt(200), Duck.duckLines[Duck.nextDuckLines][1], Duck.duckLines[Duck.nextDuckLines][2], Duck.duckLines[Duck.nextDuckLines][3], duckImg));
-
-            Duck.nextDuckLines++;
-            if(Duck.nextDuckLines >= Duck.duckLines.length)
-                Duck.nextDuckLines = 0;
+            ducks.add(new Duck(
+                    Framework.frameWidth, // 시작 X 좌표 (화면 오른쪽 끝)
+                    random.nextInt(Framework.frameHeight - 100), // 랜덤한 Y 좌표
+                    -duckSpeed, // 왼쪽으로 이동하는 음수 속도
+                    10, // 오리 점수 (예시)
+                    duckImg // 오리 이미지
+            ));
 
             Duck.lastDuckTime = System.nanoTime();
         }
 
-        for(int i = 0; i < ducks.size(); i++)
-        {
-            ducks.get(i).Update();
+        // 각 오리 업데이트 및 경계 확인
+        for (int i = 0; i < ducks.size(); i++) {
+            Duck duck = ducks.get(i);
+            duck.Update();
 
-            if(ducks.get(i).x < 0 - duckImg.getWidth())
-            {
+            // 화면 왼쪽을 벗어나면 제거
+            if (duck.x < 0 - duckImg.getWidth()) {
                 ducks.remove(i);
                 runawayDucks++;
             }
         }
 
-        if(Canvas.mouseButtonState(MouseEvent.BUTTON1))
-        {
-            if(System.nanoTime() - lastTimeShoot >= timeBetweenShots)
-            {
-                shoots++;
-                boolean duckHit = false;
+        // 마우스 클릭 상태 확인
+        if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
+            boolean duckHit = false;
 
-                for(int i = 0; i < ducks.size(); i++)
-                {
-                    if(new Rectangle(ducks.get(i).x + 18, ducks.get(i).y, 27, 30).contains(mousePosition) ||
-                            new Rectangle(ducks.get(i).x + 30, ducks.get(i).y + 30, 88, 25).contains(mousePosition))
-                    {
-                        killedDucks++;
-                        score += ducks.get(i).score;
-                        player.addScore(ducks.get(i).getScore(), true);
-                        ducks.remove(i);
-                        duckHit = true; // 오리를 맞춘 경우
-                        break;
-                    }
+            // 오리 명중 확인
+            for (int i = 0; i < ducks.size(); i++) {
+                Duck duck = ducks.get(i);
+
+                // 오리의 히트박스 생성
+                Rectangle hitBox = new Rectangle(duck.x, duck.y, duckImg.getWidth(), duckImg.getHeight());
+
+                // 마우스 포인터가 히트박스 내에 있는지 확인
+                if (hitBox.contains(mousePosition)) {
+                    killedDucks++; // 오리 명중 시 증가
+                    score += duck.getScore(); // 점수 증가
+                    player.addScore(duck.getScore(), true); // 플레이어 점수 업데이트
+                    ducks.remove(i); // 오리 제거
+                    duckHit = true;
+                    break;
                 }
-
-                // 첫 번째 발사 이후로 false로 설정
-                firstShot = false;
-                if (!duckHit) {
-                    player.addScore(0, false); // 오리를 맞추지 못했을 때
-
-                    player.resetCombo(); // (추가된 부분) 오리 명중 실패 시 콤보 초기화
-                }
-//                player.setCurrentScore(score); // 현재 점수를 플레이어 클래스에 업데이트
-                lastTimeShoot = System.nanoTime();
             }
+
+            // 오리를 명중하지 못한 경우 콤보 초기화
+            if (!duckHit) {
+                player.addScore(0, false);
+                player.resetCombo();
+            }
+
+            // 다음 클릭을 위해 클릭 상태 초기화
+            lastTimeShoot = System.nanoTime();
         }
 
-        for (int i = 0; i < ducks.size(); i++) {   //오리가 겹쳐 있는지 채크
-            Duck duck = ducks.get(i);
-            duck.Update();
-        }
-        checkCollision();
-
-        if(runawayDucks >= 200)
+        // 게임 오버 조건 확인
+        if (runawayDucks >= 200) {
             Framework.gameState = Framework.GameState.GAMEOVER;
-
+        }
     }
 
-    public void Draw(Graphics2D g2d, Point mousePosition)
-    {
+
+    // 게임 그리기
+    public void Draw(Graphics2D g2d, Point mousePosition) {
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
 
-        for(int i = 0; i < ducks.size(); i++)
-        {
-            ducks.get(i).Draw(g2d);
+        for (Duck duck : ducks) {
+            duck.Draw(g2d);
         }
 
         g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(), Framework.frameWidth, grassImg.getHeight(), null);
-
         g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth, mousePosition.y - sightImgMiddleHeight, null);
 
         g2d.setFont(font);
@@ -205,76 +208,12 @@ public class Game {
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("SHOOTS: " + shoots, 299, 21);
         g2d.drawString("SCORE: " + player.getCurrentScore(), 440, 21);
-
-        g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), 580, 21); // (추가된 부분)
+        g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), 580, 21);
     }
 
-    public void DrawGameOver(Graphics2D g2d, Point mousePosition)
-    {
+    public void DrawGameOver(Graphics2D g2d, Point mousePosition) {
         Draw(g2d, mousePosition);
-
-        g2d.setColor(Color.black);
-        g2d.drawString("Game Over", Framework.frameWidth / 2 - 39, (int)(Framework.frameHeight * 0.65) + 1);
-        g2d.drawString("Press space or enter to restart.", Framework.frameWidth / 2 - 149, (int)(Framework.frameHeight * 0.70) + 1);
         g2d.setColor(Color.red);
-        g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, (int)(Framework.frameHeight * 0.65));
-        g2d.drawString("Press space or enter to restart.", Framework.frameWidth / 2 - 150, (int)(Framework.frameHeight * 0.70));
-    }
-
-    // 최고 점수를 얻는 메서드를 추가합니다.
-    private int getHighestScore() {
-        // (추가된 부분)
-        // 최고 점수를 반환하는 로직을 구현합니다. 예시로 score를 그대로 사용했습니다.
-        // 나중에 다른 저장 방식을 사용할 수 있습니다.
-        return score;
-    }
-    private void checkCollision() {
-        // 각 오리의 충돌을 감지하기 위해 오리들을 겹치는 위치별로 그룹화합니다.
-        ArrayList<ArrayList<Duck>> overlappingGroups = new ArrayList<>();
-
-        for (int i = 0; i < ducks.size(); i++) {
-            Duck duck1 = ducks.get(i);
-            ArrayList<Duck> group = new ArrayList<>();
-            group.add(duck1);
-
-            for (int j = 0; j < ducks.size(); j++) {
-                if (i == j) continue;
-                Duck duck2 = ducks.get(j);
-
-                // 두 오리가 겹치는지 판단합니다.
-                if (areOverlapping(duck1, duck2)) {
-                    group.add(duck2);
-                }
-            }
-
-            if (group.size() > 1) {
-                overlappingGroups.add(group);
-            }
-        }
-
-        // 겹치는 그룹을 처리합니다.
-        for (ArrayList<Duck> group : overlappingGroups) {
-            if (group.size() >= 2) {
-                // 두 마리 이상 겹쳐있는 경우, 뒤에 있는 오리들을 기절시킵니다.
-                for (int i = 1; i <= Math.min(2, group.size() - 1); i++) {
-                    group.get(i).stun();
-                }
-            }
-        }
-    }
-
-    /**
-     * 두 오리가 겹치는지 판단하는 메서드.
-     */
-    private boolean areOverlapping(Duck duck1, Duck duck2) {
-        // 오리들의 이미지 크기나 위치를 사용해 겹치는지 판단합니다.
-        // 예를 들어, 단순한 AABB 충돌 검사:
-        int duck1Width = duck1.getImage().getWidth();
-        int duck1Height = duck1.getImage().getHeight();
-        int duck2Width = duck2.getImage().getWidth();
-        int duck2Height = duck2.getImage().getHeight();
-
-        return duck1.x < duck2.x + duck2Width && duck1.x + duck1Width > duck2.x
-                && duck1.y < duck2.y + duck2Height && duck1.y + duck1Height > duck2.y;
+        g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, Framework.frameHeight / 2);
     }
 }
