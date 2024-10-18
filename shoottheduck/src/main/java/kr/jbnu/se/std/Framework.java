@@ -68,19 +68,25 @@ public class Framework extends Canvas {
     // The actual game
     private Game game;
 
-    private Player player;
+    private Player player; //플레이어
     /**
      * Image for menu.
      */
     private BufferedImage shootTheDuckMenuImg;
 
-    private Sight sight;
+    private Sight sight;//조준경
+
+    private BackgroundMusic backgroundMusic; //배경음악
 
     public Framework ()
     {
         super();
         player = new Player();
+
         sight = new Sight(); // Sight 객체 생성
+
+        backgroundMusic = new BackgroundMusic();
+        backgroundMusic.play(); // Start the background music
         gameState = GameState.VISUALIZING;
 
         //We start game in new thread.
@@ -92,7 +98,6 @@ public class Framework extends Canvas {
         };
         gameThread.start();
     }
-
 
     /**
      * Set variables and objects.
