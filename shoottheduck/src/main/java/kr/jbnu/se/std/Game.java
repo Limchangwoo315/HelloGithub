@@ -21,216 +21,245 @@ public class Game {
     private Random random;
     private Font font;
     private ArrayList<Duck> ducks;
+    private GoldenDuck goldenDuck; // 황금 오리 변수 추가
     private int runawayDucks;
     private int killedDucks;
-    private int score;
-    private int highestScore; // 최고 점수 저장
     private int shoots;
     private long lastTimeShoot;
     private long timeBetweenShots;
     private BufferedImage backgroundImg;
     private BufferedImage grassImg;
     private BufferedImage duckImg;
+    private BufferedImage goldenDuckImg; // 황금 오리 이미지
     private BufferedImage sightImg;
     private int sightImgMiddleWidth;
     private int sightImgMiddleHeight;
-    private Player player = new Player(); // 플레이어 객체
-    private boolean firstShot = true;
-    private int level; // 사용자가 선택한 레벨 저장
+    private Player player = new Player();
+    private int level;
+    private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태 추가
+    private boolean bossSpawned = false;
+    private boolean bossDefeated = false;
+    private int nextBossScore = 500; // 첫 보스 등장 점수
+    private final int BOSS_SCORE_INTERVAL = 5000; // 이후 보스 등장 간격
+    private int currentStage = 1;
 
     // 생성자: 레벨 선택과 초기화
     public Game() {
-        selectLevel(); // 레벨 선택
+        selectLevel();
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
 
-        Thread threadForInitGame = new Thread() {
-            @Override
-            public void run() {
-                Initialize();
-                LoadContent();
-                Framework.gameState = Framework.GameState.PLAYING;
-            }
-        };
+        Thread threadForInitGame = new Thread(() -> {
+            Initialize();
+            LoadContent();
+            Framework.gameState = Framework.GameState.PLAYING;
+        });
         threadForInitGame.start();
     }
 
-    // 레벨 선택 창을 띄우는 메서드
     private void selectLevel() {
         String[] options = { "1", "2", "3", "4", "5" };
         String selectedLevel = (String) JOptionPane.showInputDialog(
                 null, "Select Level:", "Level Selection",
                 JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 
-        if (selectedLevel != null) {
-            level = Integer.parseInt(selectedLevel);
-        } else {
-            level = 1; // 기본값
-        }
+        level = (selectedLevel != null) ? Integer.parseInt(selectedLevel) : 1;
         System.out.println("Selected Level: " + level);
     }
 
-    // 게임 초기화
     private void Initialize() {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
-
         ducks = new ArrayList<>();
         runawayDucks = 0;
         killedDucks = 0;
-        score = 0;
-        highestScore = 0;
         shoots = 0;
         lastTimeShoot = 0;
-
-        // 레벨에 따른 오리 생성 간격 조정 (최소 나누기 1 보장)
         timeBetweenShots = Framework.secInNanosec / Math.max(1, (5 - level));
-
         player.resetCurrentScore();
     }
 
-    // 게임 리소스 로드
     private void LoadContent() {
         try {
-            URL backgroundImgUrl = this.getClass().getResource("/images/background.jpg");
-            backgroundImg = ImageIO.read(backgroundImgUrl);
-
-            URL grassImgUrl = this.getClass().getResource("/images/grass.png");
-            grassImg = ImageIO.read(grassImgUrl);
-
-            URL duckImgUrl = this.getClass().getResource("/images/duck.png");
-            duckImg = ImageIO.read(duckImgUrl);
-
-            URL sightImgUrl = this.getClass().getResource("/images/sight.png");
-            sightImg = ImageIO.read(sightImgUrl);
+            backgroundImg = ImageIO.read(getClass().getResource("/images/background.jpg"));
+            grassImg = ImageIO.read(getClass().getResource("/images/grass.png"));
+            duckImg = ImageIO.read(getClass().getResource("/images/duck.png"));
+            sightImg = ImageIO.read(getClass().getResource("/images/sight.png"));
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
+            goldenDuckImg = loadGoldenDuckImage(); // 황금오리 이미지 로드
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    // 게임 재시작
     public void RestartGame() {
         ducks.clear();
         Duck.lastDuckTime = 0;
         runawayDucks = 0;
         killedDucks = 0;
-        score = 0;
         shoots = 0;
         lastTimeShoot = 0;
-
+        bossSpawned = false;
+        bossDefeated = false;
+        nextBossScore = 500; // 첫 보스 점수로 초기화
+        currentStage = 1;
         player.resetCurrentScore();
     }
 
-    // 게임 업데이트
     public void UpdateGame(long gameTime, Point mousePosition) {
-        // 오리 생성 간격이 지났는지 확인하고 새 오리 추가
-        if (System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-            int duckSpeed = level; // 레벨에 따라 오리 속도 설정
 
-            ducks.add(new Duck(
-                    Framework.frameWidth, // 시작 X 좌표 (화면 오른쪽 끝)
-                    random.nextInt(Framework.frameHeight - 100), // 랜덤한 Y 좌표
-                    -duckSpeed, // 왼쪽으로 이동하는 음수 속도
-                    10, // 오리 점수 (예시)
-                    duckImg // 오리 이미지
-            ));
+        if (player.getCurrentScore() >= nextBossScore && !bossSpawned) {
+            spawnBossDuck();
+            bossSpawned = true;
+            bossDefeated = false;
+            System.out.println("Boss spawned! Stage: " + currentStage);
+        }
+        // 황금오리 업데이트 및 포획 처리
+        if (goldenDuck != null) {
+            goldenDuck.Update();
+            if (goldenDuck.getHitBox().x < 0 - goldenDuck.getImage().getWidth()) {
+                goldenDuck = null; // 화면을 넘어가면 황금오리 제거
+            }
+            if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
+                if (goldenDuck.getHitBox().contains(mousePosition)) {
+                    handleGoldenDuckCapture();
+                }
+            }
+        }
 
+        if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
+            spawnSmallDuck();
             Duck.lastDuckTime = System.nanoTime();
         }
 
-        // 각 오리 업데이트 및 경계 확인
         for (int i = 0; i < ducks.size(); i++) {
             Duck duck = ducks.get(i);
             duck.Update();
-
-            // 화면 왼쪽을 벗어나면 제거
-            if (duck.x < 0 - duckImg.getWidth()) {
+            if (duck.getHitBox().x < 0 - duck.getImage().getWidth()) {
                 ducks.remove(i);
                 runawayDucks++;
             }
         }
 
-        // 마우스 클릭 상태 확인
         if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
-            boolean duckHit = false;
-
-            // 오리 명중 확인
-            for (int i = 0; i < ducks.size(); i++) {
-                Duck duck = ducks.get(i);
-
-                // 오리의 히트박스 생성
-                Rectangle hitBox = new Rectangle(duck.x, duck.y, duckImg.getWidth(), duckImg.getHeight());
-
-                // 마우스 포인터가 히트박스 내에 있는지 확인
-                if (hitBox.contains(mousePosition)) {
-                    killedDucks++; // 오리 명중 시 증가
-                    player.addScore(duck.getScore(), true); // 플레이어 점수 업데이트
-
-                    // 기절 상태를 설정할 오리 판단
-                    for (Duck d : ducks) {
-                        if (d.getHitBox().intersects(hitBox) && d != duck) {
-                            d.stun(); // 겹친 오리 기절
-                        }
-                    }
-
-                    ducks.remove(i); // 오리 제거
-                    duckHit = true;
-
-                    for (int j = i + 1; j < ducks.size(); j++) {
-                        Duck nextDuck = ducks.get(j);
-                        // 오리가 겹쳐 있을 경우
-                        if (duck.getHitBox().intersects(nextDuck.getHitBox())) {
-                            nextDuck.stun(); // 기절시키기
-                            break; // 한 마리만 기절
-                        }
-                    }
-
-                    break;
-                }
+            if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
+                handleClick(mousePosition);
+                lastTimeShoot = System.nanoTime();
+                shoots++;
             }
-
-            // 오리를 명중하지 못한 경우 콤보 초기화
-            if (!duckHit) {
-                player.addScore(0, false);
-                player.resetCombo();
-            }
-
-            // 다음 클릭을 위해 클릭 상태 초기화
-            lastTimeShoot = System.nanoTime();
         }
 
-        // 게임 오버 조건 확인
         if (runawayDucks >= 200) {
             Framework.gameState = Framework.GameState.GAMEOVER;
         }
     }
 
+    private void spawnSmallDuck() {
+        int speed = -(level + currentStage);
+        ducks.add(new Duck(
+                Framework.frameWidth,
+                random.nextInt(Framework.frameHeight - 100),
+                speed, 10, duckImg));
+    }
 
-    // 게임 그리기
+    private void handleClick(Point mousePosition) {
+        boolean duckHit = false;
+
+        for (int i = 0; i < ducks.size(); i++) {
+            Duck duck = ducks.get(i);
+
+            if (duck.getHitBox().contains(mousePosition)) {
+                if (duck instanceof BossDuck) {
+                    BossDuck boss = (BossDuck) duck;
+                    boss.takeDamage();
+
+                    if (boss.getHealth() <= 0) {
+                        ducks.remove(i);
+                        player.addScore(500, true, true);
+                        System.out.println("Boss defeated!");
+                        resetAfterBossDefeat();
+                        spawnGoldenDuck();
+                    }
+                } else {
+                    killedDucks++;
+                    player.addScore(duck.getScore(), true, false);
+                    ducks.remove(i);
+                }
+                duckHit = true;
+                break;
+            }
+        }
+
+        if (!duckHit) {
+            player.addScore(0, false, false);
+            player.resetCombo();
+        }
+    }
+
+    private void resetAfterBossDefeat() {
+        bossSpawned = false;
+        currentStage++;
+        nextBossScore += BOSS_SCORE_INTERVAL;
+        player.resetCombo();
+    }
+
+    private void spawnBossDuck() {
+        ducks.clear();
+        int startY = random.nextInt(Framework.frameHeight - 300);
+        ducks.add(new BossDuck(Framework.frameWidth, startY, -2, duckImg));
+    }
+
     public void Draw(Graphics2D g2d, Point mousePosition) {
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
-
         for (Duck duck : ducks) {
             duck.Draw(g2d);
         }
-
-        g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(), Framework.frameWidth, grassImg.getHeight(), null);
-        g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth, mousePosition.y - sightImgMiddleHeight, null);
+        if (goldenDuck != null) {
+            goldenDuck.Draw(g2d);
+        }
+        g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(),
+                Framework.frameWidth, grassImg.getHeight(), null);
+        g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth,
+                mousePosition.y - sightImgMiddleHeight, null);
 
         g2d.setFont(font);
         g2d.setColor(Color.darkGray);
-
         g2d.drawString("RUNAWAY: " + runawayDucks, 10, 21);
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("SHOOTS: " + shoots, 299, 21);
         g2d.drawString("SCORE: " + player.getCurrentScore(), 440, 21);
         g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), 580, 21);
+        g2d.drawString("STAGE: " + currentStage, Framework.frameWidth / 2, 41);
     }
 
     public void DrawGameOver(Graphics2D g2d, Point mousePosition) {
         Draw(g2d, mousePosition);
         g2d.setColor(Color.red);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, Framework.frameHeight / 2);
+    }
+    private void spawnGoldenDuck() {
+        if (!goldenDuckSpawned) { // 황금오리가 이미 스폰되지 않았을 때만 생성
+            int speed = -5; // 적절한 속도로 설정
+            goldenDuck = new GoldenDuck(Framework.frameWidth, random.nextInt(Framework.frameHeight - 100), speed, goldenDuckImg);
+            goldenDuckSpawned = true; // 황금오리 스폰 플래그 설정
+        }
+    }
+
+    private BufferedImage loadGoldenDuckImage() {
+        try {
+            return ImageIO.read(getClass().getResource("/images/goldenDuck.png"));
+        } catch (IOException ex) {
+            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+            return null; // 이미지 로드 실패 시 null 반환
+        }
+    }
+    private void handleGoldenDuckCapture() {
+        if (goldenDuck != null) {
+            player.addScore(goldenDuck.getScore(), true, false); // 황금오리 점수 추가
+            goldenDuck.capture(); // 황금오리 포획
+            goldenDuck = null; // 황금오리 제거
+            timeBetweenShots = Math.max(100000000, timeBetweenShots - (Framework.secInNanosec / 8)); // 총알 발사 속도 감소
+            goldenDuckSpawned = false; // 황금오리 스폰 상태 초기화
+        }
     }
 }

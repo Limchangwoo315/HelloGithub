@@ -72,5 +72,5 @@
 //                && duck1.y < duck2.y + duck2Height && duck1.y + duck1Height > duck2.y;
 //    }
 //
-//    // 나머지 기존 코드...
+//
 //}
