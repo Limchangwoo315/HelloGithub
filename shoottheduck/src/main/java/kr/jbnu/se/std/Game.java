@@ -42,6 +42,13 @@ public class Game {
     private int nextBossScore = 500; // 첫 보스 등장 점수
     private final int BOSS_SCORE_INTERVAL = 5000; // 이후 보스 등장 간격
     private int currentStage = 1;
+    private float grassPositionX = 0; // 풀의 시작 위치
+    private float grassSpeed = 0.1f; // 풀의 이동 속도
+    private int direction = 1; // 1이면 오른쪽으로, -1이면 왼쪽으로 이동
+    private int grassWidth; // 풀 이미지의 너비
+    private float maxDistance = 5; // 최대 이동 거리
+    private float startPositionX; // 시작 위치 저장용
+
 
     // 생성자: 레벨 선택과 초기화
     public Game() {
@@ -87,6 +94,8 @@ public class Game {
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
             goldenDuckImg = loadGoldenDuckImage(); // 황금오리 이미지 로드
+            grassWidth = grassImg.getWidth();
+            startPositionX = grassPositionX; // 시작 위치 저장
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -107,6 +116,15 @@ public class Game {
     }
 
     public void UpdateGame(long gameTime, Point mousePosition) {
+
+        grassPositionX += grassSpeed * direction; // 방향에 따라 위치 변경
+
+        // 이동 거리 체크
+        float distanceMoved = Math.abs(grassPositionX - startPositionX);
+        if (distanceMoved >= maxDistance) {
+            direction *= -1; // 방향을 반전시킴
+            startPositionX = grassPositionX; // 새로운 시작 위치로 업데이트
+        }
 
         if (player.getCurrentScore() >= nextBossScore && !bossSpawned) {
             spawnBossDuck();
@@ -217,7 +235,7 @@ public class Game {
         if (goldenDuck != null) {
             goldenDuck.Draw(g2d);
         }
-        g2d.drawImage(grassImg, 0, Framework.frameHeight - grassImg.getHeight(),
+        g2d.drawImage(grassImg, (int) grassPositionX, Framework.frameHeight - grassImg.getHeight(),
                 Framework.frameWidth, grassImg.getHeight(), null);
         g2d.drawImage(sightImg, mousePosition.x - sightImgMiddleWidth,
                 mousePosition.y - sightImgMiddleHeight, null);
