@@ -6,3 +6,8 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# filebase File
+kr/jbnu/se/std/package-lock.json
+kr/jbnu/se/std/package.json
+src/main/resources/shoottheduck-8e6de-firebase-adminsdk-38auv-5445c35ab6.json
+target/classes/shoottheduck-8e6de-firebase-adminsdk-38auv-5445c35ab6.json
