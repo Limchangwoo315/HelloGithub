@@ -102,23 +102,24 @@ public class Duck {
     public void Update() {
         updateStunStatus(); // 기절 상태 업데이트
 
-        if (isStunned) {
-            speed = 0; // 기절 상태일 때 속도를 0으로 설정
+        if (!isStunned) {
+            adjustSpeedBasedOnY(); // 기절 상태일 때 속도를 0으로 설정
+        } else {
+            speed = 0; // 기절 상태에 상관없이 y값에 따라 속도 조정
         }
-        adjustSpeedBasedOnY(); // 기절 상태에 상관없이 y값에 따라 속도 조정
+
         x += speed; // 속도에 따라 위치 이동
     }
 
-
     public void adjustSpeedBasedOnY() {
         if (y < Framework.frameHeight * 0.15){
-            speed = -10;
+            speed = -5;
         } else if (y < Framework.frameHeight * 0.30){
-            speed = -8;
+            speed = -4;
         } else if (y < Framework.frameHeight * 0.58) {
-            speed = -6; // 제일 위쪽 오리의 속도를 더 빠르게
+            speed = -4; // 제일 위쪽 오리의 속도를 더 빠르게
         } else if (y < Framework.frameHeight * 0.65) {
-            speed = -4; // 그 다음 오리의 속도를 조금 빠르게
+            speed = -3; // 그 다음 오리의 속도를 조금 빠르게
         } else if (y < Framework.frameHeight * 0.7) {
             speed = -3; // 평균 속도
         } else {

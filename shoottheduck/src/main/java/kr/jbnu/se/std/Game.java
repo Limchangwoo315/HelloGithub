@@ -125,6 +125,10 @@ public class Game {
             direction *= -1; // 방향을 반전시킴
             startPositionX = grassPositionX; // 새로운 시작 위치로 업데이트
         }
+        for (int i = 0; i < ducks.size(); i++) {
+            Duck duck = ducks.get(i);
+            duck.Update(); // 기절 상태 업데이트 포함
+        }
 
         if (player.getCurrentScore() >= nextBossScore && !bossSpawned) {
             spawnBossDuck();
@@ -199,12 +203,15 @@ public class Game {
                         spawnGoldenDuck();
                     }
                 } else {
+//                    // 기절 상태로 전환
+//                    duck.stun();
+//                    duckHit = true;
+                    checkCollision();
                     killedDucks++;
                     player.addScore(duck.getScore(), true, false);
                     ducks.remove(i);
+                    break;
                 }
-                duckHit = true;
-                break;
             }
         }
 
@@ -279,5 +286,53 @@ public class Game {
             timeBetweenShots = Math.max(100000000, timeBetweenShots - (Framework.secInNanosec / 8)); // 총알 발사 속도 감소
             goldenDuckSpawned = false; // 황금오리 스폰 상태 초기화
         }
+    }
+    private void checkCollision() {
+        // 각 오리의 충돌을 감지하기 위해 오리들을 겹치는 위치별로 그룹화합니다.
+        ArrayList<ArrayList<Duck>> overlappingGroups = new ArrayList<>();
+
+        for (int i = 0; i < ducks.size(); i++) {
+            Duck duck1 = ducks.get(i);
+            ArrayList<Duck> group = new ArrayList<>();
+            group.add(duck1);
+
+            for (int j = 0; j < ducks.size(); j++) {
+                if (i == j) continue;
+                Duck duck2 = ducks.get(j);
+
+                // 두 오리가 겹치는지 판단합니다.
+                if (areOverlapping(duck1, duck2)) {
+                    group.add(duck2);
+                }
+            }
+
+            if (group.size() > 1) {
+                overlappingGroups.add(group);
+            }
+        }
+
+        // 겹치는 그룹을 처리합니다.
+        for (ArrayList<Duck> group : overlappingGroups) {
+            if (group.size() >= 2) {
+                // 두 마리 이상 겹쳐있는 경우, 뒤에 있는 오리들을 기절시킵니다.
+                for (int i = 1; i < group.size(); i++) {
+                    group.get(i).stun();
+                }
+            }
+        }
+    }
+
+    /**
+     * 두 오리가 겹치는지 판단하는 메서드.
+     */
+    private boolean areOverlapping(Duck duck1, Duck duck2) {
+        // 오리들의 이미지 크기나 위치를 사용해 겹치는지 판단합니다.
+        int duck1Width = duck1.getImage().getWidth();
+        int duck1Height = duck1.getImage().getHeight();
+        int duck2Width = duck2.getImage().getWidth();
+        int duck2Height = duck2.getImage().getHeight();
+
+        return duck1.x < duck2.x + duck2Width && duck1.x + duck1Width > duck2.x
+                && duck1.y < duck2.y + duck2Height && duck1.y + duck1Height > duck2.y;
     }
 }

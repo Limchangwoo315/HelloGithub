@@ -62,5 +62,3 @@ public class Sight {
         return isScaling;
     }
 }
-
-
