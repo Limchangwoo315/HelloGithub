@@ -203,9 +203,7 @@ public class Game {
                         spawnGoldenDuck();
                     }
                 } else {
-//                    // 기절 상태로 전환
-//                    duck.stun();
-//                    duckHit = true;
+
                     checkCollision();
                     killedDucks++;
                     player.addScore(duck.getScore(), true, false);
