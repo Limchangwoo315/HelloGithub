@@ -16,7 +16,7 @@ public class RegisterFrame extends JFrame {
     public RegisterFrame() {
         // 회원가입 화면 설정
         setTitle("회원가입");
-        setSize(400, 300);
+        setSize(400, 180);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 

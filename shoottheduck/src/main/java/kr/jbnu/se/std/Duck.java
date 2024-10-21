@@ -30,11 +30,15 @@ public class Duck {
 
 
     public static int[][] duckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60), -1, 20},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65), -2, 30},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70), -3, 40},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78), -3, 50}   //맨 아래 오리가 너무 빨라 숫자 조정
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.15)},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30)},
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60)}, // 제일 위쪽 오리
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65)}, // 그 다음 오리
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70)}, // 평균 속도
+            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78)}  // 맨 아래 오리
     };
+
+
 
     /**
      * Indicate which is next duck line.
@@ -107,18 +111,21 @@ public class Duck {
 
 
     public void adjustSpeedBasedOnY() {
-        if (y < Framework.frameHeight * 0.6) {
-            originalSpeed = -1; // 위쪽 오리의 원래 속도
+        if (y < Framework.frameHeight * 0.15){
+            speed = -10;
+        } else if (y < Framework.frameHeight * 0.30){
+            speed = -8;
+        } else if (y < Framework.frameHeight * 0.58) {
+            speed = -6; // 제일 위쪽 오리의 속도를 더 빠르게
+        } else if (y < Framework.frameHeight * 0.65) {
+            speed = -4; // 그 다음 오리의 속도를 조금 빠르게
         } else if (y < Framework.frameHeight * 0.7) {
-            originalSpeed = -2; // 중간 오리의 원래 속도
+            speed = -3; // 평균 속도
         } else {
-            originalSpeed = -3; // 아래쪽 오리의 원래 속도
+            speed = -2; // 맨 아래 오리의 속도를 느리게
         }
-
-//        if (!isStunned) {
-//            speed = originalSpeed; // 기절 상태가 아닐 때만 속도 적용
-//        }
     }
+
 
     /**
      * Draw the duck to the screen.
