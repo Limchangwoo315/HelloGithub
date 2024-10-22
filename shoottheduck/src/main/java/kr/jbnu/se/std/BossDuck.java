@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
  */
 public class BossDuck extends Duck {
 
-    private int health = 10; // 보스 체력 (10번 클릭해야 죽음)
+    private int health = 5; // 보스 체력 (10번 클릭해야 죽음)
     private double yOffset = 0;  // 위아래 움직임을 위한 오프셋
     private double ySpeed = 0.01; // 위아래 움직임 속도 (느리게 조정)
     private int amplitude = 30;   // 위아래 이동 범위 (작게 조정)

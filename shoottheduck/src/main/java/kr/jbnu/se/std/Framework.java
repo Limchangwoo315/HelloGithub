@@ -6,6 +6,8 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -13,7 +15,7 @@ import javax.imageio.ImageIO;
 /**
  * kr.jbnu.se.std.Framework that controls the game (kr.jbnu.se.std.Game.java) that created it, update it and draw it on the screen.
  *
- * @author www.gametutorial.net
+ * @author
  */
 
 public class Framework extends Canvas {
@@ -52,7 +54,8 @@ public class Framework extends Canvas {
     /**
      * Possible states of the game
      */
-    public static enum GameState{STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED}
+    public static enum GameState { STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED }
+
     /**
      * Current state of the game
      */
@@ -68,36 +71,34 @@ public class Framework extends Canvas {
     // The actual game
     private Game game;
 
-    private Player player; //플레이어
+    // private Player player; // 제거 또는 주석 처리
+    private Sight sight; // 조준경
+
+    private BackgroundMusic backgroundMusic; // 배경음악
+
+    // 여러 구름을 관리하기 위한 리스트와 구름의 수
+    private List<Cloud> clouds;
+    private final int NUM_CLOUDS = 5; // 생성할 구름의 수
+
     /**
      * Image for menu.
      */
     private BufferedImage shootTheDuckMenuImg;
 
-    private Sight sight;//조준경
-
-    private BackgroundMusic backgroundMusic; //배경음악
-
-    private Cloud cloud;
-
-    public Framework ()
-    {
+    public Framework() {
         super();
-        player = new Player();
 
         sight = new Sight(); // Sight 객체 생성
 
         backgroundMusic = new BackgroundMusic();
-        backgroundMusic.play(); // Start the background music
-
-        cloud = new Cloud();
+        backgroundMusic.play(); // 배경 음악 시작
 
         gameState = GameState.VISUALIZING;
 
-        //We start game in new thread.
+        // 게임 루프를 새 스레드에서 시작
         Thread gameThread = new Thread() {
             @Override
-            public void run(){
+            public void run() {
                 GameLoop();
             }
         };
@@ -106,25 +107,30 @@ public class Framework extends Canvas {
 
     /**
      * Set variables and objects.
-     * This method is intended to set the variables and objects for this class, variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
+     * This method is intended to set the variables and objects for this class,
+     * variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
      */
-    private void Initialize()
-    {
+    private void Initialize() {
+        // 구름 리스트 초기화
+        clouds = new ArrayList<>();
+        for (int i = 0; i < NUM_CLOUDS; i++) {
+            Cloud cloud = new Cloud(frameWidth, frameHeight);
+            cloud.setVisible(false); // 초기에는 구름을 보이지 않게 설정
+            clouds.add(cloud);
+        }
 
+        // 기타 초기화 코드...
     }
 
     /**
      * Load files - images, sounds, ...
      * This method is intended to load files for this class, files for the actual game can be loaded in kr.jbnu.se.std.Game.java.
      */
-    private void LoadContent()
-    {
-        try
-        {
+    private void LoadContent() {
+        try {
             URL shootTheDuckMenuImgUrl = this.getClass().getResource("/images/menu.jpg");
             shootTheDuckMenuImg = ImageIO.read(shootTheDuckMenuImgUrl);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             Logger.getLogger(Framework.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -132,82 +138,83 @@ public class Framework extends Canvas {
     /**
      * In specific intervals of time (GAME_UPDATE_PERIOD) the game/logic is updated and then the game is drawn on the screen.
      */
-    private void GameLoop()
-    {
-        // This two variables are used in VISUALIZING state of the game. We used them to wait some time so that we get correct frame/window resolution.
+    private void GameLoop() {
+        // VISUALIZING 상태에서 프레임 크기를 설정
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
 
-        // This variables are used for calculating the time that defines for how long we should put threat to sleep to meet the GAME_FPS.
         long beginTime, timeTaken, timeLeft;
 
-        while(true)
-        {
+        while (true) {
             beginTime = System.nanoTime();
+
             sight.update();
-            switch (gameState)
-            {
+
+            switch (gameState) {
                 case PLAYING:
-                    gameTime += System.nanoTime() - lastTime;
+                    if (game != null) { // game 객체가 null이 아닌지 확인
+                        gameTime += System.nanoTime() - lastTime;
 
-                    game.UpdateGame(gameTime, mousePosition());
+                        game.UpdateGame(gameTime, mousePosition());
 
-                    lastTime = System.nanoTime();
+                        lastTime = System.nanoTime();
+                    }
+
+                    // 모든 구름 업데이트
+                    for (Cloud cloud : clouds) {
+                        cloud.update();
+                    }
+
                     break;
                 case GAMEOVER:
-                    //...
+                    // ...
                     break;
                 case MAIN_MENU:
-                    //...
+                    // ...
                     break;
                 case OPTIONS:
-                    //...
+                    // ...
                     break;
                 case GAME_CONTENT_LOADING:
-                    //...
+                    // ...
                     break;
                 case STARTING:
-                    // Sets variables and objects.
+                    // 변수 및 객체 설정
                     Initialize();
-                    // Load files - images, sounds, ...
+                    // 파일 로드
                     LoadContent();
 
-                    // When all things that are called above finished, we change game status to main menu.
+                    // 모든 초기화가 완료되면 메인 메뉴로 전환
                     gameState = GameState.MAIN_MENU;
                     break;
                 case VISUALIZING:
-                    // On Ubuntu OS (when I tested on my old computer) this.getWidth() method doesn't return the correct value immediately (eg. for frame that should be 800px width, returns 0 than 790 and at last 798px).
-                    // So we wait one second for the window/frame to be set to its correct size. Just in case we
-                    // also insert 'this.getWidth() > 1' condition in case when the window/frame size wasn't set in time,
-                    // so that we although get approximately size.
-                    if(this.getWidth() > 1 && visualizingTime > secInNanosec)
-                    {
+                    if (this.getWidth() > 1 && visualizingTime > secInNanosec) {
                         frameWidth = this.getWidth();
                         frameHeight = this.getHeight();
 
-                        // When we get size of frame we change status.
+                        // 프레임 크기가 설정되었으므로 초기화 상태로 전환
                         gameState = GameState.STARTING;
-                    }
-                    else
-                    {
+                    } else {
                         visualizingTime += System.nanoTime() - lastVisualizingTime;
                         lastVisualizingTime = System.nanoTime();
                     }
                     break;
             }
 
-            // Repaint the screen.
+            // 화면 다시 그리기
             repaint();
 
-            // Here we calculate the time that defines for how long we should put threat to sleep to meet the GAME_FPS.
+            // FPS에 맞춰 스레드 슬립
             timeTaken = System.nanoTime() - beginTime;
-            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // In milliseconds
-            // If the time is less than 10 milliseconds, then we will put thread to sleep for 10 millisecond so that some other thread can do some work.
+            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // 밀리초 단위
+
             if (timeLeft < 10)
-                timeLeft = 10; //set a minimum
+                timeLeft = 10; // 최소 슬립 시간 설정
+
             try {
-                //Provides the necessary delay and also yields control so that other thread can do work.
                 Thread.sleep(timeLeft);
-            } catch (InterruptedException ex) { }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -215,36 +222,53 @@ public class Framework extends Canvas {
      * Draw the game to the screen. It is called through repaint() method in GameLoop() method.
      */
     @Override
-    public void Draw(Graphics2D g2d)
-    {
-        switch (gameState)
-        {
+    public void Draw(Graphics2D g2d) {
+        switch (gameState) {
             case PLAYING:
-                game.Draw(g2d, mousePosition());
-                if (player.getScore() >= 1500 && player.getScore() < 3500) {
-                    cloud.setVisible(true); // 점수가 1500 이상 3500 미만일 때 구름 표시
-                } else {
-                    cloud.setVisible(false); // 그 외의 경우 구름 숨김
+                if (game != null) { // game 객체가 null이 아닌지 확인
+                    game.Draw(g2d, mousePosition());
+                    int playerScore = game.getPlayerScore(); // 플레이어의 현재 점수 가져오기
+                    if (playerScore >= 100 && playerScore <= 3500) {
+                        // 모든 구름을 보이게 설정
+                        for (Cloud cloud : clouds) {
+                            cloud.setVisible(true);
+                        }
+                    } else {
+                        // 모든 구름을 숨김
+                        for (Cloud cloud : clouds) {
+                            cloud.setVisible(false);
+                        }
+                    }
+                    // 모든 구름 그리기
+                    for (Cloud cloud : clouds) {
+                        cloud.draw(g2d);
+                    }
                 }
-                cloud.draw(g2d); // 구름 그리기
                 break;
             case GAMEOVER:
-                game.DrawGameOver(g2d, mousePosition());
+                if (game != null) { // game 객체가 null이 아닌지 확인
+                    game.DrawGameOver(g2d, mousePosition());
+                }
                 break;
             case MAIN_MENU:
                 g2d.drawImage(shootTheDuckMenuImg, 0, 0, frameWidth, frameHeight, null);
-                g2d.drawString("Use left mouse button to shot the duck.", frameWidth / 2 - 83, (int)(frameHeight * 0.65));
-                g2d.drawString("Click with left mouse button to start the game.", frameWidth / 2 - 100, (int)(frameHeight * 0.67));
-                g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int)(frameHeight * 0.70));
+                g2d.drawString("Use left mouse button to shoot the duck.", frameWidth / 2 - 83, (int) (frameHeight * 0.65));
+                g2d.drawString("Click with left mouse button to start the game.", frameWidth / 2 - 100, (int) (frameHeight * 0.67));
+                g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int) (frameHeight * 0.70));
                 g2d.setColor(Color.white);
                 g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
-                //추가된 부분
+                // 추가된 부분: 최고 점수 표시
                 g2d.setFont(new Font("monospaced", Font.BOLD, 24));
                 g2d.setColor(Color.white);
-                g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), frameWidth / 2 - 100, frameHeight / 2 + 50); // 메인화면에 최고 점수 표시
+                // game 객체가 null인지 확인하고 접근
+                if (game != null) {
+                    g2d.drawString("HIGHEST SCORE: " + game.getHighestScore(), frameWidth / 2 - 100, frameHeight / 2 + 50);
+                } else {
+                    g2d.drawString("HIGHEST SCORE: 0", frameWidth / 2 - 100, frameHeight / 2 + 50);
+                }
                 break;
             case OPTIONS:
-                //...
+                // ...
                 break;
             case GAME_CONTENT_LOADING:
                 g2d.setColor(Color.white);
@@ -258,8 +282,7 @@ public class Framework extends Canvas {
     /**
      * Starts new game.
      */
-    private void newGame()
-    {
+    private void newGame() {
         // We set gameTime to zero and lastTime to current time for later calculations.
         gameTime = 0;
         lastTime = System.nanoTime();
@@ -268,15 +291,16 @@ public class Framework extends Canvas {
     }
 
     /**
-     *  Restart game - reset game time and call RestartGame() method of game object so that reset some variables.
+     * Restart game - reset game time and call RestartGame() method of game object so that reset some variables.
      */
-    private void restartGame()
-    {
+    private void restartGame() {
         // We set gameTime to zero and lastTime to current time for later calculations.
         gameTime = 0;
         lastTime = System.nanoTime();
 
-        game.RestartGame();
+        if (game != null) {
+            game.RestartGame();
+        }
 
         // We change game status so that the game can start.
         gameState = GameState.PLAYING;
@@ -288,19 +312,15 @@ public class Framework extends Canvas {
      *
      * @return Point of mouse coordinates.
      */
-    private Point mousePosition()
-    {
-        try
-        {
+    private Point mousePosition() {
+        try {
             Point mp = this.getMousePosition();
 
-            if(mp != null)
+            if (mp != null)
                 return this.getMousePosition();
             else
                 return new Point(0, 0);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return new Point(0, 0);
         }
     }
@@ -311,19 +331,17 @@ public class Framework extends Canvas {
      * @param e KeyEvent
      */
     @Override
-    public void keyReleasedFramework(KeyEvent e)
-    {
-        switch (gameState)
-        {
+    public void keyReleasedFramework(KeyEvent e) {
+        switch (gameState) {
             case GAMEOVER:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
-                else if(e.getKeyCode() == KeyEvent.VK_SPACE || e.getKeyCode() == KeyEvent.VK_ENTER)
+                else if (e.getKeyCode() == KeyEvent.VK_SPACE || e.getKeyCode() == KeyEvent.VK_ENTER)
                     restartGame();
                 break;
             case PLAYING:
             case MAIN_MENU:
-                if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
                 break;
         }
@@ -347,11 +365,5 @@ public class Framework extends Canvas {
                 sight.startScaling(e.getX(), e.getY());
                 break;
         }
-    }
-    // 최고 점수를 얻는 메서드를 추가합니다.
-    private int getHighestScore() {
-        // (추가된 부분)
-        // 최고 점수를 반환하는 로직을 구현합니다. 예시로 0을 반환했습니다.
-        return 0; // 실제 구현 필요 현재는 재시작할 때마다 0점으로 초기화
     }
 }

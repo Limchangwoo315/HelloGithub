@@ -4,11 +4,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
@@ -34,7 +32,7 @@ public class Game {
     private BufferedImage sightImg;
     private int sightImgMiddleWidth;
     private int sightImgMiddleHeight;
-    private Player player = new Player();
+    private Player player; // Player 객체 선언
     private int level;
     private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태 추가
     private boolean bossSpawned = false;
@@ -49,9 +47,9 @@ public class Game {
     private float maxDistance = 5; // 최대 이동 거리
     private float startPositionX; // 시작 위치 저장용
 
-
     // 생성자: 레벨 선택과 초기화
     public Game() {
+        player = new Player(); // Player 객체 초기화
         selectLevel();
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
 
@@ -81,8 +79,8 @@ public class Game {
         killedDucks = 0;
         shoots = 0;
         lastTimeShoot = 0;
-        timeBetweenShots = Framework.secInNanosec / Math.max(1, (5 - level));
-        player.resetCurrentScore();
+        timeBetweenShots = Framework.secInNanosec / (level + 1);
+        // player = new Player(); // Initialize() 메서드에서 player 초기화 제거
     }
 
     private void LoadContent() {
@@ -177,11 +175,14 @@ public class Game {
     }
 
     private void spawnSmallDuck() {
-        int speed = -(level + currentStage);
+        int baseSpeed = -(level + currentStage);
+        int speedVariation = random.nextInt(3); // 0에서 2까지의 랜덤 속도 변화
+        int adjustedSpeed = baseSpeed - speedVariation; // 스테이지에 따른 속도 조정
+
         ducks.add(new Duck(
                 Framework.frameWidth,
                 random.nextInt(Framework.frameHeight - 100),
-                speed, 10, duckImg));
+                adjustedSpeed, 10, duckImg));
     }
 
     private void handleClick(Point mousePosition) {
@@ -191,6 +192,8 @@ public class Game {
             Duck duck = ducks.get(i);
 
             if (duck.getHitBox().contains(mousePosition)) {
+                duckHit = true;
+
                 if (duck instanceof BossDuck) {
                     BossDuck boss = (BossDuck) duck;
                     boss.takeDamage();
@@ -203,7 +206,6 @@ public class Game {
                         spawnGoldenDuck();
                     }
                 } else {
-
                     checkCollision();
                     killedDucks++;
                     player.addScore(duck.getScore(), true, false);
@@ -260,6 +262,7 @@ public class Game {
         g2d.setColor(Color.red);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, Framework.frameHeight / 2);
     }
+
     private void spawnGoldenDuck() {
         if (!goldenDuckSpawned) { // 황금오리가 이미 스폰되지 않았을 때만 생성
             int speed = -5; // 적절한 속도로 설정
@@ -276,6 +279,7 @@ public class Game {
             return null; // 이미지 로드 실패 시 null 반환
         }
     }
+
     private void handleGoldenDuckCapture() {
         if (goldenDuck != null) {
             player.addScore(goldenDuck.getScore(), true, false); // 황금오리 점수 추가
@@ -285,6 +289,7 @@ public class Game {
             goldenDuckSpawned = false; // 황금오리 스폰 상태 초기화
         }
     }
+
     private void checkCollision() {
         // 각 오리의 충돌을 감지하기 위해 오리들을 겹치는 위치별로 그룹화합니다.
         ArrayList<ArrayList<Duck>> overlappingGroups = new ArrayList<>();
@@ -332,5 +337,15 @@ public class Game {
 
         return duck1.x < duck2.x + duck2Width && duck1.x + duck1Width > duck2.x
                 && duck1.y < duck2.y + duck2Height && duck1.y + duck1Height > duck2.y;
+    }
+
+    // 추가된 메서드: 플레이어의 현재 점수 반환
+    public int getPlayerScore() {
+        return player.getCurrentScore();
+    }
+
+    // 추가된 메서드: 플레이어의 최고 점수 반환
+    public int getHighestScore() {
+        return player.getHighestScore();
     }
 }
