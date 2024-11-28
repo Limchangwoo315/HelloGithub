@@ -17,6 +17,7 @@ import javax.swing.JOptionPane;
 
 public class Game implements GameEventNotifier {
 
+    private static final int MAX_RUNAWAY_DUCKS = 200;
     private List<GameObserver> observers = new ArrayList<>();
 
     private Random random;
@@ -24,15 +25,12 @@ public class Game implements GameEventNotifier {
     private ArrayList<Duck> ducks;
     private GoldenDuck goldenDuck; // 황금 오리 변수 추가
     private int runawayDucks;
+    
     private int killedDucks;
     private int shoots;
     private long lastTimeShoot;
     private long timeBetweenShots;
-    private BufferedImage backgroundImg;
-    private BufferedImage grassImg;
-    private BufferedImage duckImg;
-    private BufferedImage goldenDuckImg; // 황금 오리 이미지
-    private BufferedImage sightImg;
+    private BufferedImage backgroundImg, grassImg, duckImg, goldenDuckImg, sightImg;
     private int sightImgMiddleWidth;
     private int sightImgMiddleHeight;
     private Player player; // Player 객체 선언
@@ -40,8 +38,9 @@ public class Game implements GameEventNotifier {
     private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태 추가
     private boolean bossSpawned = false;
     private boolean bossDefeated = false;
-    private int nextBossScore = 500; // 첫 보스 등장 점수
-    private final int BOSS_SCORE_INTERVAL = 5000; // 이후 보스 등장 간격
+    private static final int INITIAL_BOSS_SCORE = 500; // 첫 보스 등장 점수
+    private static final int BOSS_SCORE_INTERVAL = 5000; // 이후 보스 등장 간격
+    private int nextBossScore = INITIAL_BOSS_SCORE;
     private int currentStage = 1;
     private float grassPositionX = 0; // 풀의 시작 위치
     private float grassSpeed = 0.1f; // 풀의 이동 속도
@@ -49,30 +48,6 @@ public class Game implements GameEventNotifier {
     private int grassWidth; // 풀 이미지의 너비
     private float maxDistance = 5; // 최대 이동 거리
     private float startPositionX; // 시작 위치 저장용
-
-    @Override
-    public void addObserver(GameObserver observer) {
-        observers.add(observer);
-    }
-
-    @Override
-    public void removeObserver(GameObserver observer) {
-        observers.remove(observer);
-    }
-
-    @Override
-    public void notifyScoreChanged(int newScore) {
-        for (GameObserver observer : observers) {
-            observer.onScoreChanged(newScore);
-        }
-    }
-
-    @Override
-    public void notifyGameStateChanged(String newState) {
-        for (GameObserver observer : observers) {
-            observer.onGameStateChanged(newState);
-        }
-    }
 
     private void handleScoreChange(int newScore) {
         notifyScoreChanged(newScore);
@@ -116,19 +91,23 @@ public class Game implements GameEventNotifier {
 
     private void LoadContent() {
         try {
-            backgroundImg = ImageIO.read(getClass().getResource("/images/background.jpg"));
-            grassImg = ImageIO.read(getClass().getResource("/images/grass.png"));
-            duckImg = ImageIO.read(getClass().getResource("/images/duck.png"));
-            sightImg = ImageIO.read(getClass().getResource("/images/sight.png"));
+            backgroundImg = loadImage("/images/background.jpg");
+            grassImg = loadImage("/images/grass.png");
+            duckImg = loadImage("/images/duck.png");
+            sightImg = loadImage("/images/sight.png");
+            goldenDuckImg = loadImage("/images/goldenDuck.png");
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
-            goldenDuckImg = loadGoldenDuckImage(); // 황금오리 이미지 로드
             grassWidth = grassImg.getWidth();
             startPositionX = grassPositionX; // 시작 위치 저장
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    private BufferedImage loadImage(String path) throws IOException {
+        return ImageIO.read(getClass().getResource(path));
+    }
+
 
     public void RestartGame() {
         ducks.clear();
@@ -139,27 +118,19 @@ public class Game implements GameEventNotifier {
         lastTimeShoot = 0;
         bossSpawned = false;
         bossDefeated = false;
-        nextBossScore = 500; // 첫 보스 점수로 초기화
         currentStage = 1;
         player.resetCurrentScore();
     }
 
     public void UpdateGame(long gameTime, Point mousePosition) {
+        updateGrassPosition();
 
-        grassPositionX += grassSpeed * direction; // 방향에 따라 위치 변경
-
-        // 이동 거리 체크
-        float distanceMoved = Math.abs(grassPositionX - startPositionX);
-        if (distanceMoved >= maxDistance) {
-            direction *= -1; // 방향을 반전시킴
-            startPositionX = grassPositionX; // 새로운 시작 위치로 업데이트
-        }
         for (int i = 0; i < ducks.size(); i++) {
             Duck duck = ducks.get(i);
             duck.Update(); // 기절 상태 업데이트 포함
         }
 
-        if (player.getCurrentScore() >= nextBossScore && !bossSpawned) {
+        if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned) {
             spawnBossDuck();
             bossSpawned = true;
             bossDefeated = false;
@@ -194,15 +165,12 @@ public class Game implements GameEventNotifier {
 
         if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
             if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
-                handleClick(mousePosition);
+                handleDuckClick(mousePosition);
                 lastTimeShoot = System.nanoTime();
                 shoots++;
             }
         }
-
-        if (runawayDucks >= 200) {
-            Framework.gameState = Framework.GameState.GAMEOVER;
-        }
+        checkGameOver();
     }
 
     private void spawnSmallDuck() {
@@ -216,7 +184,7 @@ public class Game implements GameEventNotifier {
                 adjustedSpeed, 10, duckImg));
     }
 
-    private void handleClick(Point mousePosition) {
+    private void handleDuckClick(Point mousePosition) {
         boolean duckHit = false;
 
         for (int i = 0; i < ducks.size(); i++) {
@@ -232,6 +200,7 @@ public class Game implements GameEventNotifier {
                     if (boss.getHealth() <= 0) {
                         ducks.remove(i);
                         player.addScore(500, true, true);
+                        notifyScoreChanged(player.getCurrentScore());
                         System.out.println("Boss defeated!");
                         resetAfterBossDefeat();
                         spawnGoldenDuck();
@@ -240,6 +209,7 @@ public class Game implements GameEventNotifier {
                     checkCollision();
                     killedDucks++;
                     player.addScore(duck.getScore(), true, false);
+                    notifyScoreChanged(player.getCurrentScore());
                     ducks.remove(i);
                     break;
                 }
@@ -256,7 +226,6 @@ public class Game implements GameEventNotifier {
         bossSpawned = false;
         currentStage++;
         nextBossScore += BOSS_SCORE_INTERVAL;
-        player.resetCombo();
     }
 
     private void spawnBossDuck() {
@@ -378,5 +347,45 @@ public class Game implements GameEventNotifier {
     // 추가된 메서드: 플레이어의 최고 점수 반환
     public int getHighestScore() {
         return player.getHighestScore();
+    }
+
+    private void checkGameOver() {
+        if (runawayDucks >= MAX_RUNAWAY_DUCKS) {
+            Framework.gameState = Framework.GameState.GAMEOVER;
+            notifyGameStateChanged("GAMEOVER"); // 게임 상태 변경 알림 추가
+        }
+    }
+
+    private void updateGrassPosition() {
+        grassPositionX += grassSpeed * direction;
+        float distanceMoved = Math.abs(grassPositionX - startPositionX);
+        if (distanceMoved >= maxDistance) {
+            direction *= -1;
+            startPositionX = grassPositionX;
+        }
+    }
+
+    @Override
+    public void addObserver(GameObserver observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(GameObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyScoreChanged(int newScore) {
+        for (GameObserver observer : observers) {
+            observer.onScoreChanged(newScore);
+        }
+    }
+
+    @Override
+    public void notifyGameStateChanged(String newState) {
+        for (GameObserver observer : observers) {
+            observer.onGameStateChanged(newState);
+        }
     }
 }
