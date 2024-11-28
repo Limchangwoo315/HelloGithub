@@ -18,7 +18,17 @@ import javax.imageio.ImageIO;
  * @author
  */
 
-public class Framework extends Canvas {
+public class Framework extends Canvas implements GameObserver {
+
+    @Override
+    public void onScoreChanged(int newScore) {
+        System.out.println("Score updated: " + newScore);
+    }
+
+    @Override
+    public void onGameStateChanged(String newState) {
+        System.out.println("Game state changed to: " + newState);
+    }
 
     /**
      * Width of the frame.

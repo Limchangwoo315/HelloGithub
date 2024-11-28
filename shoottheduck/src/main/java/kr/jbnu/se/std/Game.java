@@ -8,13 +8,16 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
-public class Game {
+public class Game implements GameEventNotifier {
+
+    private List<GameObserver> observers = new ArrayList<>();
 
     private Random random;
     private Font font;
@@ -46,6 +49,34 @@ public class Game {
     private int grassWidth; // 풀 이미지의 너비
     private float maxDistance = 5; // 최대 이동 거리
     private float startPositionX; // 시작 위치 저장용
+
+    @Override
+    public void addObserver(GameObserver observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(GameObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyScoreChanged(int newScore) {
+        for (GameObserver observer : observers) {
+            observer.onScoreChanged(newScore);
+        }
+    }
+
+    @Override
+    public void notifyGameStateChanged(String newState) {
+        for (GameObserver observer : observers) {
+            observer.onGameStateChanged(newState);
+        }
+    }
+
+    private void handleScoreChange(int newScore) {
+        notifyScoreChanged(newScore);
+    }
 
     // 생성자: 레벨 선택과 초기화
     public Game() {
