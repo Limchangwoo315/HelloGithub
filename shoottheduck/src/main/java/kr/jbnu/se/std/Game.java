@@ -327,12 +327,10 @@ public class Game implements GameEventNotifier {
                     group.add(duck2);
                 }
             }
-
             if (group.size() > 1) {
                 overlappingGroups.add(group);
             }
         }
-
         return overlappingGroups;
     }
 
@@ -372,7 +370,7 @@ public class Game implements GameEventNotifier {
 
     private void checkGameOver() {
         if (runawayDucks >= MAX_RUNAWAY_DUCKS) {
-            Framework. gameState = Framework.GameState.GAMEOVER;
+            Framework.setGameState(Framework.GameState.GAMEOVER);  // Framework의 static 메서드를 호출하여 gameState 수정
             notifyGameStateChanged("GAMEOVER"); // 게임 상태 변경 알림 추가
         }
     }

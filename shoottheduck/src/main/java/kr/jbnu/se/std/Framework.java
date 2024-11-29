@@ -51,29 +51,22 @@ public class Framework extends Canvas implements GameObserver {
      */
     public static final long milisecInNanosec = 1000000L;
 
-    /**
-     * FPS - Frames per second
-     * How many times per second the game should update?
-     */
+    //FPS - Frames per second, How many times per second the game should update?
     private final int GAME_FPS = 60;
-    /**
-     * Pause between updates. It is in nanoseconds.
-     */
+    //Pause between updates. It is in nanoseconds.
     private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
 
-    /**
-     * Possible states of the game
-     */
+    //Possible states of the game
     public static enum GameState { STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED }
 
-    /**
-     * Current state of the game
-     */
+    //Current state of the game
     public static GameState gameState;
 
-    /**
-     * Elapsed game time in nanoseconds.
-     */
+    public static void setGameState(GameState newGameState) {
+        gameState = newGameState;
+    }
+
+    //Elapsed game time in nanoseconds.
     private long gameTime;
     // It is used for calculating elapsed time.
     private long lastTime;
