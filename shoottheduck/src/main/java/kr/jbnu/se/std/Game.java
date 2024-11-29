@@ -17,37 +17,31 @@ import javax.swing.JOptionPane;
 
 public class Game implements GameEventNotifier {
 
-    private static final int MAX_RUNAWAY_DUCKS = 200;
-    private List<GameObserver> observers = new ArrayList<>();
+    private static final int MAX_RUNAWAY_DUCKS = 200; // 최대 도망가는 오리 수
+    private int runawayDucks, killedDucks, shoots; // 도망가는 오리 수, 죽인 오리 수, 총알 발사 횟수
+    private long lastTimeShoot, timeBetweenShots; // 마지막 총알 발사 시간, 두 발사 사이의 시간 간격
 
-    private Random random;
-    private Font font;
-    private ArrayList<Duck> ducks;
-    private GoldenDuck goldenDuck; // 황금 오리 변수 추가
-    private int runawayDucks;
-    
-    private int killedDucks;
-    private int shoots;
-    private long lastTimeShoot;
-    private long timeBetweenShots;
-    private BufferedImage backgroundImg, grassImg, duckImg, goldenDuckImg, sightImg;
-    private int sightImgMiddleWidth;
-    private int sightImgMiddleHeight;
-    private Player player; // Player 객체 선언
-    private int level;
-    private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태 추가
-    private boolean bossSpawned = false;
-    private boolean bossDefeated = false;
-    private static final int INITIAL_BOSS_SCORE = 500; // 첫 보스 등장 점수
-    private static final int BOSS_SCORE_INTERVAL = 5000; // 이후 보스 등장 간격
-    private int nextBossScore = INITIAL_BOSS_SCORE;
-    private int currentStage = 1;
-    private float grassPositionX = 0; // 풀의 시작 위치
-    private float grassSpeed = 0.1f; // 풀의 이동 속도
-    private int direction = 1; // 1이면 오른쪽으로, -1이면 왼쪽으로 이동
-    private int grassWidth; // 풀 이미지의 너비
-    private float maxDistance = 5; // 최대 이동 거리
-    private float startPositionX; // 시작 위치 저장용
+    private static final int INITIAL_BOSS_SCORE = 500, BOSS_SCORE_INTERVAL = 5000; // 첫 보스 등장 점수, 보스 등장 간격
+    private int nextBossScore = INITIAL_BOSS_SCORE, currentStage = 1; // 다음 보스 등장 점수, 현재 스테이지
+    private boolean bossSpawned = false, bossDefeated = false; // 보스 스폰 여부, 보스 처치 여부
+
+    private Player player; // 플레이어 객체
+    private int level; // 게임 레벨
+    private GoldenDuck goldenDuck; // 황금 오리 객체
+    private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태
+
+    private BufferedImage backgroundImg, grassImg, duckImg, goldenDuckImg, sightImg; // 배경, 풀, 오리, 황금 오리, 조준경 이미지
+    private int sightImgMiddleWidth, sightImgMiddleHeight; // 조준경 이미지의 중앙 위치
+
+    private float grassPositionX = 0, grassSpeed = 0.1f; // 풀의 시작 위치, 풀의 이동 속도
+    private int direction = 1, grassWidth; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽), 풀 이미지의 너비
+    private float maxDistance = 5, startPositionX; // 풀의 최대 이동 거리, 풀의 시작 위치
+
+    private Random random; // 랜덤 객체
+    private Font font; // 폰트 객체
+
+    private ArrayList<Duck> ducks; // 오리 객체 리스트
+    private List<GameObserver> observers = new ArrayList<>(); // 옵저버 리스트
 
     private void handleScoreChange(int newScore) {
         notifyScoreChanged(newScore);
@@ -124,45 +118,66 @@ public class Game implements GameEventNotifier {
 
     public void UpdateGame(long gameTime, Point mousePosition) {
         updateGrassPosition();
+        updateDucks(gameTime);
+        spawnBossIfNeeded();
+        updateAndHandleGoldenDuck(mousePosition);
+        spawnSmallDuckIfNeeded();
+        handleShooting(mousePosition);
+        checkGameOver();
+    }
 
+    private void updateGrassPosition() {
+        grassPositionX += grassSpeed * direction;
+        float distanceMoved = Math.abs(grassPositionX - startPositionX);
+        if (distanceMoved >= maxDistance) {
+            direction *= -1;
+            startPositionX = grassPositionX;
+        }
+    }
+
+    private void updateDucks(long gameTime) {
         for (int i = 0; i < ducks.size(); i++) {
             Duck duck = ducks.get(i);
-            duck.Update(); // 기절 상태 업데이트 포함
-        }
+            duck.update(); // 기절 상태 업데이트 포함
 
+            if (duck.getHitBox().x < 0 - duck.getImage().getWidth()) {
+                ducks.remove(i);
+                runawayDucks++;
+            }
+        }
+    }
+
+    private void spawnBossIfNeeded() {
         if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned) {
             spawnBossDuck();
             bossSpawned = true;
             bossDefeated = false;
-            System.out.println("Boss spawned! Stage: " + currentStage);
         }
-        // 황금오리 업데이트 및 포획 처리
+    }
+
+    private void updateAndHandleGoldenDuck(Point mousePosition) {
         if (goldenDuck != null) {
-            goldenDuck.Update();
+            goldenDuck.update();
             if (goldenDuck.getHitBox().x < 0 - goldenDuck.getImage().getWidth()) {
                 goldenDuck = null; // 화면을 넘어가면 황금오리 제거
             }
+
             if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
                 if (goldenDuck.getHitBox().contains(mousePosition)) {
                     handleGoldenDuckCapture();
                 }
             }
         }
+    }
 
+    private void spawnSmallDuckIfNeeded() {
         if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
             spawnSmallDuck();
             Duck.lastDuckTime = System.nanoTime();
         }
+    }
 
-        for (int i = 0; i < ducks.size(); i++) {
-            Duck duck = ducks.get(i);
-            duck.Update();
-            if (duck.getHitBox().x < 0 - duck.getImage().getWidth()) {
-                ducks.remove(i);
-                runawayDucks++;
-            }
-        }
-
+    private void handleShooting(Point mousePosition) {
         if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
             if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
                 handleDuckClick(mousePosition);
@@ -170,7 +185,6 @@ public class Game implements GameEventNotifier {
                 shoots++;
             }
         }
-        checkGameOver();
     }
 
     private void spawnSmallDuck() {
@@ -182,6 +196,13 @@ public class Game implements GameEventNotifier {
                 Framework.frameWidth,
                 random.nextInt(Framework.frameHeight - 100),
                 adjustedSpeed, 10, duckImg));
+    }
+
+    private void spawnBossDuck() {
+        ducks.clear();
+        int startY = random.nextInt(Framework.frameHeight - 300);
+        ducks.add(new BossDuck(Framework.frameWidth, startY, -2, duckImg));
+        System.out.println("Boss spawned! Stage: " + currentStage);
     }
 
     private void handleDuckClick(Point mousePosition) {
@@ -226,12 +247,7 @@ public class Game implements GameEventNotifier {
         bossSpawned = false;
         currentStage++;
         nextBossScore += BOSS_SCORE_INTERVAL;
-    }
-
-    private void spawnBossDuck() {
-        ducks.clear();
-        int startY = random.nextInt(Framework.frameHeight - 300);
-        ducks.add(new BossDuck(Framework.frameWidth, startY, -2, duckImg));
+        spawnGoldenDuck();
     }
 
     public void Draw(Graphics2D g2d, Point mousePosition) {
@@ -291,7 +307,11 @@ public class Game implements GameEventNotifier {
     }
 
     private void checkCollision() {
-        // 각 오리의 충돌을 감지하기 위해 오리들을 겹치는 위치별로 그룹화합니다.
+        ArrayList<ArrayList<Duck>> overlappingGroups = groupOverlappingDucks();
+        stunOverlappingDucks(overlappingGroups);
+    }
+
+    private ArrayList<ArrayList<Duck>> groupOverlappingDucks() {
         ArrayList<ArrayList<Duck>> overlappingGroups = new ArrayList<>();
 
         for (int i = 0; i < ducks.size(); i++) {
@@ -303,7 +323,6 @@ public class Game implements GameEventNotifier {
                 if (i == j) continue;
                 Duck duck2 = ducks.get(j);
 
-                // 두 오리가 겹치는지 판단합니다.
                 if (areOverlapping(duck1, duck2)) {
                     group.add(duck2);
                 }
@@ -314,10 +333,12 @@ public class Game implements GameEventNotifier {
             }
         }
 
-        // 겹치는 그룹을 처리합니다.
+        return overlappingGroups;
+    }
+
+    private void stunOverlappingDucks(ArrayList<ArrayList<Duck>> overlappingGroups) {
         for (ArrayList<Duck> group : overlappingGroups) {
             if (group.size() >= 2) {
-                // 두 마리 이상 겹쳐있는 경우, 뒤에 있는 오리들을 기절시킵니다.
                 for (int i = 1; i < group.size(); i++) {
                     group.get(i).stun();
                 }
@@ -356,15 +377,7 @@ public class Game implements GameEventNotifier {
         }
     }
 
-    private void updateGrassPosition() {
-        grassPositionX += grassSpeed * direction;
-        float distanceMoved = Math.abs(grassPositionX - startPositionX);
-        if (distanceMoved >= maxDistance) {
-            direction *= -1;
-            startPositionX = grassPositionX;
-        }
-    }
-
+    //Observer Pattern
     @Override
     public void addObserver(GameObserver observer) {
         observers.add(observer);

@@ -3,71 +3,17 @@ package kr.jbnu.se.std;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-/**
- * The duck class.
- *
- * @author www.gametutorial.net
- */
-
 public class Duck {
-
-    /**
-     * How much time must pass in order to create a new duck?
-     */
     public static long timeBetweenDucks = Framework.secInNanosec / 2;
-
-    /**
-     * Last time when the duck was created.
-     */
     public static long lastDuckTime = 0;
 
-    /**
-     * kr.jbnu.se.std.Duck lines.
-     * Where is starting location for the duck?
-     * Speed of the duck?
-     * How many points is a duck worth?
-     */
 
-
-    public static int[][] duckLines = {
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.15)},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.30)},
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.60)}, // 제일 위쪽 오리
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.65)}, // 그 다음 오리
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.70)}, // 평균 속도
-            {Framework.frameWidth, (int)(Framework.frameHeight * 0.78)}  // 맨 아래 오리
-    };
-
-
-
-    /**
-     * Indicate which is next duck line.
-     */
-    public static int nextDuckLines = 0;
-
-    /**
-     * X coordinate of the duck.
-     */
     public int x;
-
-    /**
-     * Y coordinate of the duck.
-     */
     public int y;
-
-    /**
-     * How fast the duck should move? And to which direction?
-     */
     protected int speed;
 
-    /**
-     * How many points this duck is worth?
-     */
     public int score;
 
-    /**
-     * kr.jbnu.se.std.Duck image.
-     */
     private BufferedImage duckImg;
 
     /**
@@ -79,12 +25,17 @@ public class Duck {
      * @param score How many points this duck is worth?
      * @param duckImg Image of the duck.
      */
+    // 기절 상태 관련
+    private boolean isStunned = false;
+    private long stunnedStartTime = 0;
+    private static final long STUN_DURATION = 1500000000L; // 1.5초
+    private int originalSpeed;
 
-    private boolean isStunned = false; // 기절 여부를 나타내는 변수
-    private long stunnedStartTime = 0; // 기절 시작 시간
-    private static final long STUN_DURATION = 1500000000L; // 1.5초 (나노초)
-    private int originalSpeed; // 원래 속도를 저장하는 변수
-
+    //속도 관련 상수
+    private static final int SPEED_FAST = -5;
+    private static final int SPEED_MEDIUM = -4;
+    private static final int SPEED_SLOW = -3;
+    private static final int SPEED_VERY_SLOW = -2;
 
 
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
@@ -99,7 +50,7 @@ public class Duck {
     /**
      * Move the duck.
      */
-    public void Update() {
+    public void update() {
         updateStunStatus(); // 기절 상태 업데이트
 
         if (!isStunned) {
@@ -111,35 +62,26 @@ public class Duck {
         x += speed; // 속도에 따라 위치 이동
     }
 
-    public void adjustSpeedBasedOnY() {
-        if (y < Framework.frameHeight * 0.15){
-            speed = -5;
-        } else if (y < Framework.frameHeight * 0.30){
-            speed = -4;
+    private void adjustSpeedBasedOnY() {
+        if (y < Framework.frameHeight * 0.15) {
+            speed = SPEED_FAST;
+        } else if (y < Framework.frameHeight * 0.30) {
+            speed = SPEED_MEDIUM;
         } else if (y < Framework.frameHeight * 0.58) {
-            speed = -4; // 제일 위쪽 오리의 속도를 더 빠르게
+            speed = SPEED_MEDIUM;
         } else if (y < Framework.frameHeight * 0.65) {
-            speed = -3; // 그 다음 오리의 속도를 조금 빠르게
-        } else if (y < Framework.frameHeight * 0.7) {
-            speed = -3; // 평균 속도
+            speed = SPEED_SLOW;
+        } else if (y < Framework.frameHeight * 0.70) {
+            speed = SPEED_SLOW;
         } else {
-            speed = -2; // 맨 아래 오리의 속도를 느리게
+            speed = SPEED_VERY_SLOW;
         }
     }
 
 
-    /**
-     * Draw the duck to the screen.
-     * @param g2d Graphics2D
-     */
     public void Draw(Graphics2D g2d) {
         g2d.drawImage(duckImg, x, y, null);
     }
-
-    // (최고 점수) 메서드: 이 메서드는 현재 점수를 반환합니다.
-    public int getScore() { // (최고 점수)
-        return score; // (최고 점수)
-    } // (최고 점수)
 
     public void stun() {
         if (!isStunned) { // 이미 기절 상태가 아닐 때만 기절
@@ -164,8 +106,9 @@ public class Duck {
         return duckImg;
     }
 
+    public int getScore() { return score; }
+
     public Rectangle getHitBox() {
         return new Rectangle(x, y, duckImg.getWidth(), duckImg.getHeight());
     }
 }
-
