@@ -111,4 +111,11 @@ public class Duck {
     public Rectangle getHitBox() {
         return new Rectangle(x, y, duckImg.getWidth(), duckImg.getHeight());
     }
+
+    public static void resetLastDuckTime() {
+        lastDuckTime = 0;
+    }
+    public static void updateLastDuckTime(long newTime) {
+        lastDuckTime = newTime;
+    }
 }

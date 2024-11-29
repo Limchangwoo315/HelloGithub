@@ -105,7 +105,7 @@ public class Game implements GameEventNotifier {
 
     public void RestartGame() {
         ducks.clear();
-        Duck.lastDuckTime = 0;
+        Duck.resetLastDuckTime();
         runawayDucks = 0;
         killedDucks = 0;
         shoots = 0;
@@ -173,7 +173,7 @@ public class Game implements GameEventNotifier {
     private void spawnSmallDuckIfNeeded() {
         if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
             spawnSmallDuck();
-            Duck.lastDuckTime = System.nanoTime();
+            Duck.updateLastDuckTime(System.nanoTime());
         }
     }
 
@@ -372,7 +372,7 @@ public class Game implements GameEventNotifier {
 
     private void checkGameOver() {
         if (runawayDucks >= MAX_RUNAWAY_DUCKS) {
-            Framework.gameState = Framework.GameState.GAMEOVER;
+            Framework. gameState = Framework.GameState.GAMEOVER;
             notifyGameStateChanged("GAMEOVER"); // 게임 상태 변경 알림 추가
         }
     }
