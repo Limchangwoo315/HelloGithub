@@ -79,7 +79,7 @@ public class Game implements GameEventNotifier {
         killedDucks = 0;
         shoots = 0;
         lastTimeShoot = 0;
-        timeBetweenShots = Framework.secInNanosec / (level + 1);
+        timeBetweenShots = Framework.SEC_IN_NANOSEC / (level + 1);
         // player = new Player(); // Initialize() 메서드에서 player 초기화 제거
     }
 
@@ -301,7 +301,7 @@ public class Game implements GameEventNotifier {
             player.addScore(goldenDuck.getScore(), true, false); // 황금오리 점수 추가
             goldenDuck.capture(); // 황금오리 포획
             goldenDuck = null; // 황금오리 제거
-            timeBetweenShots = Math.max(100000000, timeBetweenShots - (Framework.secInNanosec / 8)); // 총알 발사 속도 감소
+            timeBetweenShots = Math.max(100000000, timeBetweenShots - (Framework.SEC_IN_NANOSEC / 8)); // 총알 발사 속도 감소
             goldenDuckSpawned = false; // 황금오리 스폰 상태 초기화
         }
     }

@@ -14,9 +14,9 @@ public class Window extends JFrame {
         this.setTitle("Shoot the Duck");
 
         // 윈도우 크기 설정
-        if (false) { // 전체화면 모드
+        if (true) { // 전체화면 모드
             this.setUndecorated(true);
-            this.setExtendedState(this.MAXIMIZED_BOTH);
+            this.setExtendedState(Frame.MAXIMIZED_BOTH);
         } else {
             this.setSize(800, 600);  // 기본 크기 800x600
             this.setLocationRelativeTo(null);  // 화면의 중앙에 위치

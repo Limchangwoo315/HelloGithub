@@ -4,7 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class Duck {
-    public static long timeBetweenDucks = Framework.secInNanosec / 2;
+    public static long timeBetweenDucks = Framework.SEC_IN_NANOSEC / 2;
     public static long lastDuckTime = 0;
 
 

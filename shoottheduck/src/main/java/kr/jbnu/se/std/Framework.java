@@ -12,12 +12,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
-/**
- * kr.jbnu.se.std.Framework that controls the game (kr.jbnu.se.std.Game.java) that created it, update it and draw it on the screen.
- *
- * @author
- */
-
 public class Framework extends Canvas implements GameObserver {
 
     @Override
@@ -26,9 +20,8 @@ public class Framework extends Canvas implements GameObserver {
     }
 
     @Override
-    public void onGameStateChanged(String newState) {
-        System.out.println("Game state changed to: " + newState);
-    }
+    public void onGameStateChanged(String newState) { }
+
 
     /**
      * Width of the frame.
@@ -43,18 +36,18 @@ public class Framework extends Canvas implements GameObserver {
      * Time of one second in nanoseconds.
      * 1 second = 1 000 000 000 nanoseconds
      */
-    public static final long secInNanosec = 1000000000L;
+    public static final long SEC_IN_NANOSEC = 1000000000L;
 
     /**
      * Time of one millisecond in nanoseconds.
      * 1 millisecond = 1 000 000 nanoseconds
      */
-    public static final long milisecInNanosec = 1000000L;
+    public static final long MILISEC_IN_NANOSEC = 1000000L;
 
     //FPS - Frames per second, How many times per second the game should update?
     private final int GAME_FPS = 60;
     //Pause between updates. It is in nanoseconds.
-    private final long GAME_UPDATE_PERIOD = secInNanosec / GAME_FPS;
+    private final long GAME_UPDATE_PERIOD = SEC_IN_NANOSEC / GAME_FPS;
 
     //Possible states of the game
     public static enum GameState { STARTING, VISUALIZING, GAME_CONTENT_LOADING, MAIN_MENU, OPTIONS, PLAYING, GAMEOVER, DESTROYED }
@@ -66,37 +59,29 @@ public class Framework extends Canvas implements GameObserver {
         gameState = newGameState;
     }
 
-    //Elapsed game time in nanoseconds.
     private long gameTime;
-    // It is used for calculating elapsed time.
     private long lastTime;
 
-    // The actual game
-    private Game game;
+    private transient Game game;
+    private transient Sight sight; // 조준경
+    private transient BackgroundMusic backgroundMusic; // 배경음악
 
-    // private Player player; // 제거 또는 주석 처리
-    private Sight sight; // 조준경
-
-    private BackgroundMusic backgroundMusic; // 배경음악
-
-    // 여러 구름을 관리하기 위한 리스트와 구름의 수
-    private List<Cloud> clouds;
+    private transient List<Cloud> clouds;
     private final int NUM_CLOUDS = 5; // 생성할 구름의 수
 
+    private boolean isRunning = true;
     /**
      * Image for menu.
      */
-    private BufferedImage shootTheDuckMenuImg;
+    private transient BufferedImage shootTheDuckMenuImg;
 
     public Framework() {
         super();
-
         sight = new Sight(); // Sight 객체 생성
-
         backgroundMusic = new BackgroundMusic();
         backgroundMusic.play(); // 배경 음악 시작
 
-        gameState = GameState.VISUALIZING;
+        changeGameState(GameState.VISUALIZING);
 
         // 게임 루프를 새 스레드에서 시작
         Thread gameThread = new Thread() {
@@ -121,14 +106,8 @@ public class Framework extends Canvas implements GameObserver {
             cloud.setVisible(false); // 초기에는 구름을 보이지 않게 설정
             clouds.add(cloud);
         }
-
-        // 기타 초기화 코드...
     }
 
-    /**
-     * Load files - images, sounds, ...
-     * This method is intended to load files for this class, files for the actual game can be loaded in kr.jbnu.se.std.Game.java.
-     */
     private void LoadContent() {
         try {
             URL shootTheDuckMenuImgUrl = this.getClass().getResource("/images/menu.jpg");
@@ -138,80 +117,45 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
+    // 동기화된 상태 변경 메서드
+    public static synchronized void changeGameState(GameState newState) {
+        gameState = newState;
+    }
+
+    public static synchronized GameState getGameState() {
+        return gameState;
+    }
+
     /**
      * In specific intervals of time (GAME_UPDATE_PERIOD) the game/logic is updated and then the game is drawn on the screen.
      */
     private void GameLoop() {
-        // VISUALIZING 상태에서 프레임 크기를 설정
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
-
         long beginTime, timeTaken, timeLeft;
 
-        while (true) {
+        while (isRunning) {
             beginTime = System.nanoTime();
-
             sight.update();
 
+            // 상태별 처리
             switch (gameState) {
-                case PLAYING:
-                    if (game != null) { // game 객체가 null이 아닌지 확인
-                        gameTime += System.nanoTime() - lastTime;
-
-                        game.UpdateGame(gameTime, mousePosition());
-
-                        lastTime = System.nanoTime();
-                    }
-
-                    // 모든 구름 업데이트
-                    for (Cloud cloud : clouds) {
-                        cloud.update();
-                    }
-
-                    break;
-                case GAMEOVER:
-                    // ...
-                    break;
-                case MAIN_MENU:
-                    // ...
-                    break;
-                case OPTIONS:
-                    // ...
-                    break;
-                case GAME_CONTENT_LOADING:
-                    // ...
-                    break;
-                case STARTING:
-                    // 변수 및 객체 설정
-                    Initialize();
-                    // 파일 로드
-                    LoadContent();
-
-                    // 모든 초기화가 완료되면 메인 메뉴로 전환
-                    gameState = GameState.MAIN_MENU;
-                    break;
-                case VISUALIZING:
-                    if (this.getWidth() > 1 && visualizingTime > secInNanosec) {
-                        frameWidth = this.getWidth();
-                        frameHeight = this.getHeight();
-
-                        // 프레임 크기가 설정되었으므로 초기화 상태로 전환
-                        gameState = GameState.STARTING;
-                    } else {
-                        visualizingTime += System.nanoTime() - lastVisualizingTime;
-                        lastVisualizingTime = System.nanoTime();
-                    }
-                    break;
+                case PLAYING -> handlePlayingState();
+                case GAMEOVER -> handleGameOverState();
+                case MAIN_MENU -> handleMainMenuState();
+                case OPTIONS -> handleOptionsState();
+                case GAME_CONTENT_LOADING -> handleContentLoadingState();
+                case STARTING -> handleStartingState();
+                case VISUALIZING -> {
+                    visualizingTime = handleVisualizingState(visualizingTime, lastVisualizingTime);
+                    lastVisualizingTime = System.nanoTime();
+                }
+                case DESTROYED -> isRunning = false;
             }
-
-            // 화면 다시 그리기
             repaint();
 
-            // FPS에 맞춰 스레드 슬립
             timeTaken = System.nanoTime() - beginTime;
-            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / milisecInNanosec; // 밀리초 단위
-
-            if (timeLeft < 10)
-                timeLeft = 10; // 최소 슬립 시간 설정
+            timeLeft = (GAME_UPDATE_PERIOD - timeTaken) / MILISEC_IN_NANOSEC;
+            if (timeLeft < 10) timeLeft = 10;
 
             try {
                 Thread.sleep(timeLeft);
@@ -221,66 +165,128 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
+    private void handlePlayingState() {
+        if (game != null) { // game 객체가 null인지 확인
+            gameTime += System.nanoTime() - lastTime;
+            game.UpdateGame(gameTime, mousePosition());
+            lastTime = System.nanoTime();
+        }
+
+        for (Cloud cloud : clouds) {
+            cloud.update();
+        }
+    }
+
+    private void handleStartingState() {
+        Initialize();
+        LoadContent();
+        Framework.changeGameState(GameState.MAIN_MENU);
+    }
+
+    private long handleVisualizingState(long visualizingTime, long lastVisualizingTime) {
+        if (this.getWidth() > 1 && visualizingTime > SEC_IN_NANOSEC) {
+            Framework.setFrameSize(this.getWidth(), this.getHeight()); // 크기 설정
+            Framework.changeGameState(GameState.STARTING);
+        } else {
+            visualizingTime += System.nanoTime() - lastVisualizingTime;
+        }
+        return visualizingTime;
+    }
+
+    private void handleGameOverState() {
+        // GAMEOVER 상태 처리 로직
+    }
+
+    private void handleMainMenuState() {
+        // MAIN_MENU 상태 처리 로직
+    }
+
+    private void handleOptionsState() {
+        // OPTIONS 상태 처리 로직
+    }
+
+    private void handleContentLoadingState() {
+        // GAME_CONTENT_LOADING 상태 처리 로직
+    }
+
+    public static synchronized void setFrameSize(int width, int height) {
+        frameWidth = width;
+        frameHeight = height;
+    }
+
+    public static synchronized int getFrameWidth() {
+        return frameWidth;
+    }
+
+    public static synchronized int getFrameHeight() {
+        return frameHeight;
+    }
+
     /**
      * Draw the game to the screen. It is called through repaint() method in GameLoop() method.
      */
     @Override
     public void Draw(Graphics2D g2d) {
         switch (gameState) {
-            case PLAYING:
-                if (game != null) { // game 객체가 null이 아닌지 확인
-                    game.Draw(g2d, mousePosition());
-                    int playerScore = game.getPlayerScore(); // 플레이어의 현재 점수 가져오기
-                    if (playerScore >= 100 && playerScore <= 3500) {
-                        // 모든 구름을 보이게 설정
-                        for (Cloud cloud : clouds) {
-                            cloud.setVisible(true);
-                        }
-                    } else {
-                        // 모든 구름을 숨김
-                        for (Cloud cloud : clouds) {
-                            cloud.setVisible(false);
-                        }
-                    }
-                    // 모든 구름 그리기
-                    for (Cloud cloud : clouds) {
-                        cloud.draw(g2d);
-                    }
-                }
-                break;
-            case GAMEOVER:
-                if (game != null) { // game 객체가 null이 아닌지 확인
-                    game.DrawGameOver(g2d, mousePosition());
-                }
-                break;
-            case MAIN_MENU:
-                g2d.drawImage(shootTheDuckMenuImg, 0, 0, frameWidth, frameHeight, null);
-                g2d.drawString("Use left mouse button to shoot the duck.", frameWidth / 2 - 83, (int) (frameHeight * 0.65));
-                g2d.drawString("Click with left mouse button to start the game.", frameWidth / 2 - 100, (int) (frameHeight * 0.67));
-                g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int) (frameHeight * 0.70));
-                g2d.setColor(Color.white);
-                g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
-                // 추가된 부분: 최고 점수 표시
-                g2d.setFont(new Font("monospaced", Font.BOLD, 24));
-                g2d.setColor(Color.white);
-                // game 객체가 null인지 확인하고 접근
-                if (game != null) {
-                    g2d.drawString("HIGHEST SCORE: " + game.getHighestScore(), frameWidth / 2 - 100, frameHeight / 2 + 50);
-                } else {
-                    g2d.drawString("HIGHEST SCORE: 0", frameWidth / 2 - 100, frameHeight / 2 + 50);
-                }
-                break;
-            case OPTIONS:
-                // ...
-                break;
-            case GAME_CONTENT_LOADING:
-                g2d.setColor(Color.white);
-                g2d.drawString("GAME is LOADING", frameWidth / 2 - 50, frameHeight / 2);
-                break;
+            case PLAYING -> drawPlayingState(g2d);
+            case GAMEOVER -> drawGameOverState(g2d);
+            case MAIN_MENU -> drawMainMenuState(g2d);
+            case OPTIONS -> drawOptionsState(g2d);
+            case GAME_CONTENT_LOADING -> drawLoadingState(g2d);
+            default -> drawUnknownState(g2d);
         }
-        // Sight 이미지 그리기
         sight.draw(g2d);
     }
+
+    private void drawPlayingState(Graphics2D g2d) {
+        if (game != null) {
+            game.Draw(g2d, mousePosition());
+
+            int playerScore = game.getPlayerScore();
+            boolean showClouds = (playerScore >= 100 && playerScore <= 3500);
+
+            for (Cloud cloud : clouds) {
+                cloud.setVisible(showClouds);
+                cloud.draw(g2d);
+            }
+        }
+    }
+
+    private void drawGameOverState(Graphics2D g2d) {
+        if (game != null) {
+            game.DrawGameOver(g2d, mousePosition());
+        }
+    }
+
+    private void drawMainMenuState(Graphics2D g2d) {
+        g2d.drawImage(shootTheDuckMenuImg, 0, 0, frameWidth, frameHeight, null);
+
+        g2d.setColor(Color.white);
+        g2d.drawString("Use left mouse button to shoot the duck.", frameWidth / 2 - 83, (int) (frameHeight * 0.65));
+        g2d.drawString("Click with left mouse button to start the game.", frameWidth / 2 - 100, (int) (frameHeight * 0.67));
+        g2d.drawString("Press ESC any time to exit the game.", frameWidth / 2 - 75, (int) (frameHeight * 0.70));
+        g2d.drawString("WWW.GAMETUTORIAL.NET", 7, frameHeight - 5);
+
+        g2d.setFont(new Font("monospaced", Font.BOLD, 24));
+        g2d.setColor(Color.white);
+        String highestScoreText = (game != null) ? "HIGHEST SCORE: " + game.getHighestScore() : "HIGHEST SCORE: 0";
+        g2d.drawString(highestScoreText, frameWidth / 2 - 100, frameHeight / 2 + 50);
+    }
+
+    private void drawOptionsState(Graphics2D g2d) {
+        // OPTIONS 상태를 위한 렌더링 로직 (현재 비어 있음)
+    }
+
+    private void drawLoadingState(Graphics2D g2d) {
+        g2d.setColor(Color.white);
+        g2d.drawString("GAME is LOADING", frameWidth / 2 - 50, frameHeight / 2);
+    }
+
+    private void drawUnknownState(Graphics2D g2d) {
+        g2d.setColor(Color.red);
+        g2d.drawString("UNKNOWN GAME STATE", frameWidth / 2 - 50, frameHeight / 2);
+    }
+
 
     /**
      * Starts new game.
@@ -306,7 +312,7 @@ public class Framework extends Canvas implements GameObserver {
         }
 
         // We change game status so that the game can start.
-        gameState = GameState.PLAYING;
+        Framework.changeGameState(GameState.PLAYING);
     }
 
     /**
@@ -347,6 +353,9 @@ public class Framework extends Canvas implements GameObserver {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
                     System.exit(0);
                 break;
+            default:
+                System.out.println("Unexpected game state in keyReleasedFramework: " + gameState);
+                break;
         }
     }
 
@@ -364,8 +373,10 @@ public class Framework extends Canvas implements GameObserver {
                 }
                 break;
             case PLAYING:
-                // 클릭 시 Sight 크기 증가 시작
                 sight.startScaling(e.getX(), e.getY());
+                break;
+            default:
+                System.out.println("Unexpected game state in mouseClicked: " + gameState);
                 break;
         }
     }
