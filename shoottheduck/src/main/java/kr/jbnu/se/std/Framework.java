@@ -20,7 +20,9 @@ public class Framework extends Canvas implements GameObserver {
     }
 
     @Override
-    public void onGameStateChanged(String newState) { }
+    public void onGameStateChanged(String newState) {
+        // Do nothing
+    }
 
 
     /**

@@ -16,7 +16,7 @@ public class LoginFrame extends JFrame {
         // 로그인 화면 설정
         setTitle("로그인");
         setSize(400, 180);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         // 패널 생성

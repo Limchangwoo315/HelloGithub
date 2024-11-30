@@ -21,55 +21,44 @@ import javax.swing.JPanel;
 
 public abstract class Canvas extends JPanel implements KeyListener, MouseListener {
 
-    // Keyboard states - Here are stored states for keyboard keys - is it down or not.
-    private static boolean[] keyboardState = new boolean[525];
-
-    // Mouse states - Here are stored states for mouse keys - is it down or not.
-    private static boolean[] mouseState = new boolean[3];
-
+    // 인스턴스 필드로 변경
+    private boolean[] keyboardState = new boolean[525];  // 크기를 적절하게 설정
+    private static boolean[] mouseState = new boolean[3];  // 마우스 버튼 상태 저장 (static 필드로 유지)
 
     public Canvas() {
-        // We use double buffer to draw on the screen.
+        // Double buffering
         this.setDoubleBuffered(true);
         this.setFocusable(true);
         this.setBackground(Color.black);
 
-        // If you will draw your own mouse cursor or if you just want that mouse cursor disappear,
-        // insert "true" into if condition and mouse cursor will be removed.
+        // 커서 처리 (마우스 커서 숨김)
         if (true) {
             BufferedImage blankCursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
             Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(blankCursorImg, new Point(0, 0), null);
             this.setCursor(blankCursor);
         }
 
-        // Adds the keyboard listener to JPanel to receive key events from this component.
+        // 이벤트 리스너 추가
         this.addKeyListener(this);
-        // Adds the mouse listener to JPanel to receive mouse events from this component.
         this.addMouseListener(this);
     }
 
-    // This method is overridden in kr.jbnu.se.std.Framework.java and is used for drawing to the screen.
+    // 추상 메서드, 구체적인 화면 그리기 로직은 자식 클래스에서 정의
     public abstract void Draw(Graphics2D g2d);
 
     @Override
     public void paintComponent(Graphics g) {
-        Graphics2D g2d = (Graphics2D)g;
+        Graphics2D g2d = (Graphics2D) g;
         super.paintComponent(g2d);
         Draw(g2d);
     }
 
-    // Keyboard
-    /**
-     * Is keyboard key "key" down?
-     *
-     * @param key Number of key for which you want to check the state.
-     * @return true if the key is down, false if the key is not down.
-     */
-    public static boolean keyboardKeyState(int key) {
+    // 키보드 상태
+    public boolean keyboardKeyState(int key) {
         return keyboardState[key];
     }
 
-    // Methods of the keyboard listener.
+    // 키보드 이벤트 리스너
     @Override
     public void keyPressed(KeyEvent e) {
         keyboardState[e.getKeyCode()] = true;
@@ -84,23 +73,16 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     @Override
     public void keyTyped(KeyEvent e) { }
 
+    // 키가 해제되었을 때의 동작을 처리하는 추상 메서드
     public abstract void keyReleasedFramework(KeyEvent e);
 
-    // Mouse
-    /**
-     * Is mouse button "button" down?
-     * Parameter "button" can be "MouseEvent.BUTTON1" - Indicates mouse button #1
-     * or "MouseEvent.BUTTON2" - Indicates mouse button #2 ...
-     *
-     * @param button Number of mouse button for which you want to check the state.
-     * @return true if the button is down, false if the button is not down.
-     */
+    // 마우스 상태
     public static boolean mouseButtonState(int button) {
-        return mouseState[button - 1];
+        return mouseState[button - 1];  // 1, 2, 3에 맞는 인덱스를 반환
     }
 
-    // Sets mouse key status.
-    private void mouseKeyStatus(MouseEvent e, boolean status) {
+    // 마우스 버튼 상태 설정
+    private static void mouseKeyStatus(MouseEvent e, boolean status) {
         if (e.getButton() == MouseEvent.BUTTON1)
             mouseState[0] = status;
         else if (e.getButton() == MouseEvent.BUTTON2)
@@ -109,7 +91,7 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
             mouseState[2] = status;
     }
 
-    // Methods of the mouse listener.
+    // 마우스 이벤트 리스너
     @Override
     public void mousePressed(MouseEvent e) {
         mouseKeyStatus(e, true);
@@ -128,5 +110,4 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
 
     @Override
     public void mouseExited(MouseEvent e) { }
-
 }
