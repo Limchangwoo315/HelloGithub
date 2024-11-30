@@ -148,7 +148,7 @@ public class Game implements GameEventNotifier {
     }
 
     private void spawnBossIfNeeded() {
-        if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned) {
+        if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned && !bossDefeated) {
             spawnBossDuck();
             bossSpawned = true;
             bossDefeated = false;
@@ -253,6 +253,7 @@ public class Game implements GameEventNotifier {
 
     private void resetAfterBossDefeat() {
         bossSpawned = false;
+        bossDefeated = true;
         currentStage++;
         nextBossScore += BOSS_SCORE_INTERVAL;
         spawnGoldenDuck();
