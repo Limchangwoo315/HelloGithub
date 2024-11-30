@@ -9,7 +9,7 @@ public class Duck {
 
     public int x;
     public int y;
-    protected int speed;
+    protected int speed;  // protected로 변경하여 상속받은 클래스에서 접근 가능하도록 함
     public int score;
 
     private BufferedImage duckImg;
