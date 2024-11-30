@@ -34,7 +34,7 @@ public class Game implements GameEventNotifier {
     private int sightImgMiddleWidth, sightImgMiddleHeight; // 조준경 이미지의 중앙 위치
 
     private float grassPositionX = 0, grassSpeed = 0.1f; // 풀의 시작 위치, 풀의 이동 속도
-    private int direction = 1, grassWidth; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽), 풀 이미지의 너비
+    private int direction = 1; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽)
     private float maxDistance = 5, startPositionX; // 풀의 최대 이동 거리, 풀의 시작 위치
 
     private Random random; // 랜덤 객체
@@ -43,10 +43,6 @@ public class Game implements GameEventNotifier {
     private ArrayList<Duck> ducks; // 오리 객체 리스트
     private List<GameObserver> observers = new ArrayList<>(); // 옵저버 리스트
 
-    private void handleScoreChange(int newScore) {
-        notifyScoreChanged(newScore);
-    }
-
     // 생성자: 레벨 선택과 초기화
     public Game() {
         player = new Player(); // Player 객체 초기화
@@ -54,8 +50,8 @@ public class Game implements GameEventNotifier {
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
 
         Thread threadForInitGame = new Thread(() -> {
-            Initialize();
-            LoadContent();
+            initialize();
+            loadContent();
             Framework.gameState = Framework.GameState.PLAYING;
         });
         threadForInitGame.start();
@@ -71,7 +67,7 @@ public class Game implements GameEventNotifier {
         System.out.println("Selected Level: " + level);
     }
 
-    private void Initialize() {
+    private void initialize() {
         random = new Random();
         font = new Font("monospaced", Font.BOLD, 18);
         ducks = new ArrayList<>();
@@ -80,10 +76,9 @@ public class Game implements GameEventNotifier {
         shoots = 0;
         lastTimeShoot = 0;
         timeBetweenShots = Framework.SEC_IN_NANOSEC / (level + 1);
-        // player = new Player(); // Initialize() 메서드에서 player 초기화 제거
     }
 
-    private void LoadContent() {
+    private void loadContent() {
         try {
             backgroundImg = loadImage("/images/background.jpg");
             grassImg = loadImage("/images/grass.png");
@@ -92,7 +87,6 @@ public class Game implements GameEventNotifier {
             goldenDuckImg = loadImage("/images/goldenDuck.png");
             sightImgMiddleWidth = sightImg.getWidth() / 2;
             sightImgMiddleHeight = sightImg.getHeight() / 2;
-            grassWidth = grassImg.getWidth();
             startPositionX = grassPositionX; // 시작 위치 저장
         } catch (IOException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
@@ -103,7 +97,7 @@ public class Game implements GameEventNotifier {
     }
 
 
-    public void RestartGame() {
+    public void restartGame() {
         ducks.clear();
         Duck.resetLastDuckTime();
         runawayDucks = 0;
@@ -116,9 +110,9 @@ public class Game implements GameEventNotifier {
         player.resetCurrentScore();
     }
 
-    public void UpdateGame(long gameTime, Point mousePosition) {
+    public void updateGame(long gameTime, Point mousePosition) {
         updateGrassPosition();
-        updateDucks(gameTime);
+        updateDucks();
         spawnBossIfNeeded();
         updateAndHandleGoldenDuck(mousePosition);
         spawnSmallDuckIfNeeded();
@@ -135,7 +129,7 @@ public class Game implements GameEventNotifier {
         }
     }
 
-    private void updateDucks(long gameTime) {
+    private void updateDucks() {
         for (int i = 0; i < ducks.size(); i++) {
             Duck duck = ducks.get(i);
             duck.update(); // 기절 상태 업데이트 포함
@@ -144,6 +138,13 @@ public class Game implements GameEventNotifier {
                 ducks.remove(i);
                 runawayDucks++;
             }
+        }
+    }
+
+    private void spawnSmallDuckIfNeeded() {
+        if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.TIME_BETWEEN_DUCKS) {
+            spawnSmallDuck();
+            Duck.updateLastDuckTime(System.nanoTime());
         }
     }
 
@@ -162,28 +163,19 @@ public class Game implements GameEventNotifier {
                 goldenDuck = null; // 화면을 넘어가면 황금오리 제거
             }
 
-            if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
-                if (goldenDuck.getHitBox().contains(mousePosition)) {
-                    handleGoldenDuckCapture();
-                }
+            if (Canvas.mouseButtonState(MouseEvent.BUTTON1)
+                    && goldenDuck.getHitBox().contains(mousePosition)) {
+                handleGoldenDuckCapture();
             }
-        }
-    }
-
-    private void spawnSmallDuckIfNeeded() {
-        if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.timeBetweenDucks) {
-            spawnSmallDuck();
-            Duck.updateLastDuckTime(System.nanoTime());
         }
     }
 
     private void handleShooting(Point mousePosition) {
-        if (Canvas.mouseButtonState(MouseEvent.BUTTON1)) {
-            if (System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
-                handleDuckClick(mousePosition);
-                lastTimeShoot = System.nanoTime();
-                shoots++;
-            }
+        if (Canvas.mouseButtonState(MouseEvent.BUTTON1)
+                && System.nanoTime() - lastTimeShoot >= timeBetweenShots) {
+            handleDuckClick(mousePosition);
+            lastTimeShoot = System.nanoTime();
+            shoots++;
         }
     }
 
@@ -259,13 +251,13 @@ public class Game implements GameEventNotifier {
         spawnGoldenDuck();
     }
 
-    public void Draw(Graphics2D g2d, Point mousePosition) {
+    public void draw(Graphics2D g2d, Point mousePosition) {
         g2d.drawImage(backgroundImg, 0, 0, Framework.frameWidth, Framework.frameHeight, null);
         for (Duck duck : ducks) {
-            duck.Draw(g2d);
+            duck.draw(g2d);
         }
         if (goldenDuck != null) {
-            goldenDuck.Draw(g2d);
+            goldenDuck.draw(g2d);
         }
         g2d.drawImage(grassImg, (int) grassPositionX, Framework.frameHeight - grassImg.getHeight(),
                 Framework.frameWidth, grassImg.getHeight(), null);
@@ -282,19 +274,10 @@ public class Game implements GameEventNotifier {
         g2d.drawString("STAGE: " + currentStage, Framework.frameWidth / 2, 41);
     }
 
-    public void DrawGameOver(Graphics2D g2d, Point mousePosition) {
-        Draw(g2d, mousePosition);
+    public void drawGameOver(Graphics2D g2d, Point mousePosition) {
+        draw(g2d, mousePosition);
         g2d.setColor(Color.red);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, Framework.frameHeight / 2);
-    }
-
-    private BufferedImage loadGoldenDuckImage() {
-        try {
-            return ImageIO.read(getClass().getResource("/images/goldenDuck.png"));
-        } catch (IOException ex) {
-            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
-            return null; // 이미지 로드 실패 시 null 반환
-        }
     }
 
     private void handleGoldenDuckCapture() {

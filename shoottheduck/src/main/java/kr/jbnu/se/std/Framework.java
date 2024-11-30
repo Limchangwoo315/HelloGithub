@@ -84,7 +84,7 @@ public class Framework extends Canvas implements GameObserver {
      * This method is intended to set the variables and objects for this class,
      * variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
      */
-    private void Initialize() {
+    private void initialize() {
         clouds = new ArrayList<>();
         for (int i = 0; i < NUM_CLOUDS; i++) {
             Cloud cloud = new Cloud(frameWidth, frameHeight);
@@ -93,7 +93,7 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
-    private void LoadContent() {
+    private void loadContent() {
         try {
             URL shootTheDuckMenuImgUrl = this.getClass().getResource("/images/menu.jpg");
             shootTheDuckMenuImg = ImageIO.read(shootTheDuckMenuImgUrl);
@@ -153,7 +153,7 @@ public class Framework extends Canvas implements GameObserver {
     private void handlePlayingState() {
         if (game != null) { // game 객체가 null인지 확인
             gameTime += System.nanoTime() - lastTime;
-            game.UpdateGame(gameTime, mousePosition());
+            game.updateGame(gameTime, mousePosition());
             lastTime = System.nanoTime();
         }
 
@@ -163,8 +163,8 @@ public class Framework extends Canvas implements GameObserver {
     }
 
     private void handleStartingState() {
-        Initialize();
-        LoadContent();
+        initialize();
+        loadContent();
         Framework.changeGameState(GameState.MAIN_MENU);
     }
 
@@ -210,7 +210,7 @@ public class Framework extends Canvas implements GameObserver {
      * Draw the game to the screen. It is called through repaint() method in GameLoop() method.
      */
     @Override
-    public void Draw(Graphics2D g2d) {
+    public void draw(Graphics2D g2d) {
         switch (gameState) {
             case PLAYING -> drawPlayingState(g2d);
             case GAMEOVER -> drawGameOverState(g2d);
@@ -224,7 +224,7 @@ public class Framework extends Canvas implements GameObserver {
 
     private void drawPlayingState(Graphics2D g2d) {
         if (game != null) {
-            game.Draw(g2d, mousePosition());
+            game.draw(g2d, mousePosition());
 
             int playerScore = game.getPlayerScore();
             boolean showClouds = (playerScore >= 100 && playerScore <= 3500);
@@ -238,7 +238,7 @@ public class Framework extends Canvas implements GameObserver {
 
     private void drawGameOverState(Graphics2D g2d) {
         if (game != null) {
-            game.DrawGameOver(g2d, mousePosition());
+            game.drawGameOver(g2d, mousePosition());
         }
     }
 
@@ -291,7 +291,7 @@ public class Framework extends Canvas implements GameObserver {
         lastTime = System.nanoTime();
 
         if (game != null) {
-            game.RestartGame();
+            game.restartGame();
         }
 
         // We change game status so that the game can start.

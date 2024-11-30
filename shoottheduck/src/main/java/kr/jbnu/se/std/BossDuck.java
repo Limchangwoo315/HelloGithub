@@ -43,7 +43,7 @@ public class BossDuck extends Duck {
     }
 
     @Override
-    public void Draw(Graphics2D g2d) {
+    public void draw(Graphics2D g2d) {
         int scaledWidth = getImage().getWidth() * 3;
         int scaledHeight = getImage().getHeight() * 3;
         g2d.drawImage(getImage(), x, y, scaledWidth, scaledHeight, null);

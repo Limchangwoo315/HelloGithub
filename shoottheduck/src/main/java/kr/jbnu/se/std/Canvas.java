@@ -44,13 +44,13 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     }
 
     // 추상 메서드, 구체적인 화면 그리기 로직은 자식 클래스에서 정의
-    public abstract void Draw(Graphics2D g2d);
+    public abstract void draw(Graphics2D g2d);
 
     @Override
     public void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         super.paintComponent(g2d);
-        Draw(g2d);
+        draw(g2d);
     }
 
     // 키보드 상태
