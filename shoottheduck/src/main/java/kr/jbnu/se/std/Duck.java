@@ -37,7 +37,6 @@ public class Duck {
     private static final int SPEED_SLOW = -3;
     private static final int SPEED_VERY_SLOW = -2;
 
-
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
         this.x = x;
         this.y = y;
@@ -47,9 +46,11 @@ public class Duck {
         this.originalSpeed = speed;
     }
 
-    /**
-     * Move the duck.
-     */
+    public void Draw(Graphics2D g2d) {
+        g2d.drawImage(duckImg, x, y, null);
+    }
+
+
     public void update() {
         updateStunStatus(); // 기절 상태 업데이트
 
@@ -76,11 +77,6 @@ public class Duck {
         } else {
             speed = SPEED_VERY_SLOW;
         }
-    }
-
-
-    public void Draw(Graphics2D g2d) {
-        g2d.drawImage(duckImg, x, y, null);
     }
 
     public void stun() {

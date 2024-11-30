@@ -24,26 +24,10 @@ public class Framework extends Canvas implements GameObserver {
         // Do nothing
     }
 
-
-    /**
-     * Width of the frame.
-     */
     public static int frameWidth;
-    /**
-     * Height of the frame.
-     */
     public static int frameHeight;
 
-    /**
-     * Time of one second in nanoseconds.
-     * 1 second = 1 000 000 000 nanoseconds
-     */
     public static final long SEC_IN_NANOSEC = 1000000000L;
-
-    /**
-     * Time of one millisecond in nanoseconds.
-     * 1 millisecond = 1 000 000 nanoseconds
-     */
     public static final long MILISEC_IN_NANOSEC = 1000000L;
 
     //FPS - Frames per second, How many times per second the game should update?
@@ -101,7 +85,6 @@ public class Framework extends Canvas implements GameObserver {
      * variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
      */
     private void Initialize() {
-        // 구름 리스트 초기화
         clouds = new ArrayList<>();
         for (int i = 0; i < NUM_CLOUDS; i++) {
             Cloud cloud = new Cloud(frameWidth, frameHeight);
@@ -219,7 +202,6 @@ public class Framework extends Canvas implements GameObserver {
     public static synchronized int getFrameWidth() {
         return frameWidth;
     }
-
     public static synchronized int getFrameHeight() {
         return frameHeight;
     }
@@ -288,7 +270,6 @@ public class Framework extends Canvas implements GameObserver {
         g2d.setColor(Color.red);
         g2d.drawString("UNKNOWN GAME STATE", frameWidth / 2 - 50, frameHeight / 2);
     }
-
 
     /**
      * Starts new game.

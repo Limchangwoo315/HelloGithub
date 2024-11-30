@@ -205,6 +205,14 @@ public class Game implements GameEventNotifier {
         System.out.println("Boss spawned! Stage: " + currentStage);
     }
 
+    private void spawnGoldenDuck() {
+        if (!goldenDuckSpawned) { // 황금오리가 이미 스폰되지 않았을 때만 생성
+            int speed = -5; // 적절한 속도로 설정
+            goldenDuck = new GoldenDuck(Framework.frameWidth, random.nextInt(Framework.frameHeight - 100), speed, goldenDuckImg);
+            goldenDuckSpawned = true; // 황금오리 스폰 플래그 설정
+        }
+    }
+
     private void handleDuckClick(Point mousePosition) {
         boolean duckHit = false;
 
@@ -277,14 +285,6 @@ public class Game implements GameEventNotifier {
         Draw(g2d, mousePosition);
         g2d.setColor(Color.red);
         g2d.drawString("Game Over", Framework.frameWidth / 2 - 40, Framework.frameHeight / 2);
-    }
-
-    private void spawnGoldenDuck() {
-        if (!goldenDuckSpawned) { // 황금오리가 이미 스폰되지 않았을 때만 생성
-            int speed = -5; // 적절한 속도로 설정
-            goldenDuck = new GoldenDuck(Framework.frameWidth, random.nextInt(Framework.frameHeight - 100), speed, goldenDuckImg);
-            goldenDuckSpawned = true; // 황금오리 스폰 플래그 설정
-        }
     }
 
     private BufferedImage loadGoldenDuckImage() {
