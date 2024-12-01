@@ -77,7 +77,7 @@ public class Framework extends Canvas implements GameObserver {
         gameThread.start();
     }
 
-    private void initialize() {
+    private void initializeCloud() {
         clouds = new ArrayList<>();
         for (int i = 0; i < NUM_CLOUDS; i++) {
             Cloud cloud = new Cloud(frameWidth, frameHeight);
@@ -153,7 +153,7 @@ public class Framework extends Canvas implements GameObserver {
     }
 
     private void handleStartingState() {
-        initialize();
+        initializeCloud();
         loadContent();
         Framework.changeGameState(GameState.MAIN_MENU);
     }
