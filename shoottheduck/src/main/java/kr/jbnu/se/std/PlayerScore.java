@@ -5,14 +5,14 @@ import java.io.*;
 /**
  * Player class to manage player's scores.
  */
-public class Player {
+public class PlayerScore {
     private int highestScore;
     private int currentScore;
     private double comboMultiplier;
     private int comboCount;
     private static final String SCORE_FILE = "highestScore.txt";  // 최고 점수를 저장할 파일
 
-    public Player() {
+    public PlayerScore() {
         this.highestScore = loadHighestScore();  // 최고 점수 로드
         this.currentScore = 0;
         this.comboMultiplier = 1.0;

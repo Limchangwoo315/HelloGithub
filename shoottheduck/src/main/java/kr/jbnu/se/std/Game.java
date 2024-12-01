@@ -25,7 +25,7 @@ public class Game implements GameEventNotifier {
     private int nextBossScore = INITIAL_BOSS_SCORE, currentStage = 1; // 다음 보스 등장 점수, 현재 스테이지
     private boolean bossSpawned = false, bossDefeated = false; // 보스 스폰 여부, 보스 처치 여부
 
-    private Player player; // 플레이어 객체
+    private PlayerScore playerScore; // 플레이어 객체
     private int level; // 게임 레벨
     private GoldenDuck goldenDuck; // 황금 오리 객체
     private boolean goldenDuckSpawned = false; // 황금 오리 스폰 상태
@@ -49,7 +49,7 @@ public class Game implements GameEventNotifier {
 
     // 생성자: 레벨 선택과 초기화
     public Game() {
-        player = new Player(); // Player 객체 초기화
+        playerScore = new PlayerScore(); // Player 객체 초기화
         selectLevel();
         Framework.gameState = Framework.GameState.GAME_CONTENT_LOADING;
 
@@ -112,7 +112,7 @@ public class Game implements GameEventNotifier {
         bossSpawned = false;
         bossDefeated = false;
         currentStage = 1;
-        player.resetCurrentScore();
+        playerScore.resetCurrentScore();
     }
 
     public void updateGame(long gameTime, Point mousePosition) {
@@ -152,7 +152,7 @@ public class Game implements GameEventNotifier {
         }
     }
     private void spawnBossIfNeeded() {
-        if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned && !bossDefeated) {
+        if (playerScore.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned && !bossDefeated) {
             spawnBossDuck();
             bossSpawned = true;
             bossDefeated = false;
@@ -223,8 +223,8 @@ public class Game implements GameEventNotifier {
 
                     if (boss.getHealth() <= 0) {
                         ducks.remove(i);
-                        player.addScore(500, true, true);
-                        notifyScoreChanged(player.getCurrentScore());
+                        playerScore.addScore(500, true, true);
+                        notifyScoreChanged(playerScore.getCurrentScore());
                         System.out.println("Boss defeated!");
                         resetAfterBossDefeat();  // 보스 처치 후 처리
                         spawnGoldenDuck();
@@ -232,8 +232,8 @@ public class Game implements GameEventNotifier {
                 } else {
                     checkCollision();
                     killedDucks++;
-                    player.addScore(duck.getScore(), true, false);
-                    notifyScoreChanged(player.getCurrentScore());
+                    playerScore.addScore(duck.getScore(), true, false);
+                    notifyScoreChanged(playerScore.getCurrentScore());
                     ducks.remove(i);
                     break;
                 }
@@ -241,8 +241,8 @@ public class Game implements GameEventNotifier {
         }
 
         if (!duckHit) {
-            player.addScore(0, false, false);
-            player.resetCombo();
+            playerScore.addScore(0, false, false);
+            playerScore.resetCombo();
         }
     }
 
@@ -272,8 +272,8 @@ public class Game implements GameEventNotifier {
         g2d.drawString("RUNAWAY: " + runawayDucks, 10, 21);
         g2d.drawString("KILLS: " + killedDucks, 160, 21);
         g2d.drawString("SHOOTS: " + shoots, 299, 21);
-        g2d.drawString("SCORE: " + player.getCurrentScore(), 440, 21);
-        g2d.drawString("HIGHEST SCORE: " + player.getHighestScore(), 580, 21);
+        g2d.drawString("SCORE: " + playerScore.getCurrentScore(), 440, 21);
+        g2d.drawString("HIGHEST SCORE: " + playerScore.getHighestScore(), 580, 21);
         g2d.drawString("STAGE: " + currentStage, Framework.frameWidth / 2, 41);
     }
 
@@ -285,7 +285,7 @@ public class Game implements GameEventNotifier {
 
     private void handleGoldenDuckCapture() {
         if (goldenDuck != null) {
-            player.addScore(goldenDuck.getScore(), true, false); // 황금오리 점수 추가
+            playerScore.addScore(goldenDuck.getScore(), true, false); // 황금오리 점수 추가
             goldenDuck.capture(); // 황금오리 포획
             goldenDuck = null; // 황금오리 제거
             timeBetweenShots = Math.max(100000000, timeBetweenShots - (Framework.SEC_IN_NANOSEC / 8)); // 총알 발사 속도 감소
@@ -344,12 +344,12 @@ public class Game implements GameEventNotifier {
 
     // 추가된 메서드: 플레이어의 현재 점수 반환
     public int getPlayerScore() {
-        return player.getCurrentScore();
+        return playerScore.getCurrentScore();
     }
 
     // 추가된 메서드: 플레이어의 최고 점수 반환
     public int getHighestScore() {
-        return player.getHighestScore();
+        return playerScore.getHighestScore();
     }
 
     private void checkGameOver() {
