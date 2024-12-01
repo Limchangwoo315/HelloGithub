@@ -34,7 +34,7 @@ public class Game implements GameEventNotifier {
     private int sightImgMiddleWidth, sightImgMiddleHeight; // 조준경 이미지의 중앙 위치
 
     private float grassPositionX = 0, grassSpeed = 0.1f; // 풀의 시작 위치, 풀의 이동 속도
-    private int direction = 1; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽)
+    private int direction = 1; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽), 풀 이미지의 너비
     private float maxDistance = 5, startPositionX; // 풀의 최대 이동 거리, 풀의 시작 위치
 
     private Random random; // 랜덤 객체
@@ -42,6 +42,10 @@ public class Game implements GameEventNotifier {
 
     private ArrayList<Duck> ducks; // 오리 객체 리스트
     private List<GameObserver> observers = new ArrayList<>(); // 옵저버 리스트
+
+    private void handleScoreChange(int newScore) {
+        notifyScoreChanged(newScore);
+    }
 
     // 생성자: 레벨 선택과 초기화
     public Game() {
@@ -76,6 +80,7 @@ public class Game implements GameEventNotifier {
         shoots = 0;
         lastTimeShoot = 0;
         timeBetweenShots = Framework.SEC_IN_NANOSEC / (level + 1);
+        // player = new Player(); // Initialize() 메서드에서 player 초기화 제거
     }
 
     private void loadContent() {
@@ -140,14 +145,12 @@ public class Game implements GameEventNotifier {
             }
         }
     }
-
     private void spawnSmallDuckIfNeeded() {
         if (!bossSpawned && System.nanoTime() - Duck.lastDuckTime >= Duck.TIME_BETWEEN_DUCKS) {
             spawnSmallDuck();
             Duck.updateLastDuckTime(System.nanoTime());
         }
     }
-
     private void spawnBossIfNeeded() {
         if (player.getCurrentScore() >= INITIAL_BOSS_SCORE && !bossSpawned && !bossDefeated) {
             spawnBossDuck();
@@ -223,7 +226,7 @@ public class Game implements GameEventNotifier {
                         player.addScore(500, true, true);
                         notifyScoreChanged(player.getCurrentScore());
                         System.out.println("Boss defeated!");
-                        resetAfterBossDefeat();
+                        resetAfterBossDefeat();  // 보스 처치 후 처리
                         spawnGoldenDuck();
                     }
                 } else {
@@ -328,9 +331,6 @@ public class Game implements GameEventNotifier {
         }
     }
 
-    /**
-     * 두 오리가 겹치는지 판단하는 메서드.
-     */
     private boolean areOverlapping(Duck duck1, Duck duck2) {
         // 오리들의 이미지 크기나 위치를 사용해 겹치는지 판단합니다.
         int duck1Width = duck1.getImage().getWidth();

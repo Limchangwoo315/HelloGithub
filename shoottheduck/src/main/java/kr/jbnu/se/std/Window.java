@@ -18,10 +18,6 @@ public class Window extends JFrame {
         if (true) { // 전체화면 모드
             this.setUndecorated(true);
             this.setExtendedState(Frame.MAXIMIZED_BOTH);
-        } else {
-            this.setSize(800, 600); // 기본 크기 800x600
-            this.setLocationRelativeTo(null); // 화면의 중앙에 위치
-            this.setResizable(false); // 크기 조정 불가
         }
 
         // 창 닫을 때 프로그램 종료

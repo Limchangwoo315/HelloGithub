@@ -13,12 +13,6 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
-/**
- * Create a JPanel on which we draw and listen for keyboard and mouse events.
- *
- * @author www.gametutorial.net
- */
-
 public abstract class Canvas extends JPanel implements KeyListener, MouseListener {
 
     // 인스턴스 필드로 변경
@@ -53,12 +47,10 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
         draw(g2d);
     }
 
-    // 키보드 상태
     public boolean keyboardKeyState(int key) {
         return keyboardState[key];
     }
 
-    // 키보드 이벤트 리스너
     @Override
     public void keyPressed(KeyEvent e) {
         keyboardState[e.getKeyCode()] = true;
@@ -73,10 +65,8 @@ public abstract class Canvas extends JPanel implements KeyListener, MouseListene
     @Override
     public void keyTyped(KeyEvent e) { }
 
-    // 키가 해제되었을 때의 동작을 처리하는 추상 메서드
     public abstract void keyReleasedFramework(KeyEvent e);
 
-    // 마우스 상태
     public static boolean mouseButtonState(int button) {
         return mouseState[button - 1];  // 1, 2, 3에 맞는 인덱스를 반환
     }

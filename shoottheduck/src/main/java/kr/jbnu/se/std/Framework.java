@@ -56,9 +56,7 @@ public class Framework extends Canvas implements GameObserver {
     private final int NUM_CLOUDS = 5; // 생성할 구름의 수
 
     private boolean isRunning = true;
-    /**
-     * Image for menu.
-     */
+
     private transient BufferedImage shootTheDuckMenuImg;
 
     public Framework() {
@@ -79,11 +77,6 @@ public class Framework extends Canvas implements GameObserver {
         gameThread.start();
     }
 
-    /**
-     * Set variables and objects.
-     * This method is intended to set the variables and objects for this class,
-     * variables and objects for the actual game can be set in kr.jbnu.se.std.Game.java.
-     */
     private void initialize() {
         clouds = new ArrayList<>();
         for (int i = 0; i < NUM_CLOUDS; i++) {
@@ -111,9 +104,6 @@ public class Framework extends Canvas implements GameObserver {
         return gameState;
     }
 
-    /**
-     * In specific intervals of time (GAME_UPDATE_PERIOD) the game/logic is updated and then the game is drawn on the screen.
-     */
     private void GameLoop() {
         long visualizingTime = 0, lastVisualizingTime = System.nanoTime();
         long beginTime, timeTaken, timeLeft;
@@ -206,9 +196,6 @@ public class Framework extends Canvas implements GameObserver {
         return frameHeight;
     }
 
-    /**
-     * Draw the game to the screen. It is called through repaint() method in GameLoop() method.
-     */
     @Override
     public void draw(Graphics2D g2d) {
         switch (gameState) {
@@ -271,9 +258,6 @@ public class Framework extends Canvas implements GameObserver {
         g2d.drawString("UNKNOWN GAME STATE", frameWidth / 2 - 50, frameHeight / 2);
     }
 
-    /**
-     * Starts new game.
-     */
     private void newGame() {
         // We set gameTime to zero and lastTime to current time for later calculations.
         gameTime = 0;
@@ -282,9 +266,6 @@ public class Framework extends Canvas implements GameObserver {
         game = new Game();
     }
 
-    /**
-     * Restart game - reset game time and call RestartGame() method of game object so that reset some variables.
-     */
     private void restartGame() {
         // We set gameTime to zero and lastTime to current time for later calculations.
         gameTime = 0;
@@ -298,12 +279,6 @@ public class Framework extends Canvas implements GameObserver {
         Framework.changeGameState(GameState.PLAYING);
     }
 
-    /**
-     * Returns the position of the mouse pointer in game frame/window.
-     * If mouse position is null than this method return 0,0 coordinate.
-     *
-     * @return Point of mouse coordinates.
-     */
     private Point mousePosition() {
         try {
             Point mp = this.getMousePosition();
@@ -317,11 +292,6 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
-    /**
-     * This method is called when keyboard key is released.
-     *
-     * @param e KeyEvent
-     */
     @Override
     public void keyReleasedFramework(KeyEvent e) {
         switch (gameState) {
@@ -342,11 +312,6 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
-    /**
-     * This method is called when mouse button is clicked.
-     *
-     * @param e MouseEvent
-     */
     @Override
     public void mouseClicked(MouseEvent e) {
         switch (gameState) {

@@ -10,33 +10,46 @@ public class Duck {
     public int x;
     public int y;
     protected int speed;
+
     public int score;
 
     private BufferedImage duckImg;
 
-    // DuckState 객체를 포함
-    private DuckState state;
 
-    private DuckSpeedManager speedManager;  // DuckSpeedManager 객체 추가
+    // 기절 상태 관련
+    private boolean isStunned = false;
+    private long stunnedStartTime = 0;
+    private static final long STUN_DURATION = 1500000000L; // 1.5초
+    private int originalSpeed;
+
+    //속도 관련 상수
+    private static final int SPEED_FAST = -5;
+    private static final int SPEED_MEDIUM = -4;
+    private static final int SPEED_SLOW = -3;
+    private static final int SPEED_VERY_SLOW = -2;
+
+    // y 위치에 따른 범위 설정
+    private static final double[] Y_THRESHOLDS = {0.15, 0.30, 0.58, 0.65, 0.70};
 
     public Duck(int x, int y, int speed, int score, BufferedImage duckImg) {
         this.x = x;
         this.y = y;
+        this.speed = speed;
         this.score = score;
         this.duckImg = duckImg;
-        this.state = new DuckState(); // DuckState 객체 초기화
-        this.speedManager = new DuckSpeedManager(speed); // DuckSpeedManager 초기화
+        this.originalSpeed = speed;
     }
 
     public void draw(Graphics2D g2d) {
         g2d.drawImage(duckImg, x, y, null);
     }
 
-    public void update() {
-        state.updateStunStatus(speed); // 상태 업데이트
 
-        if (state.isStunned()) {
-            speed = 0; // 기절 상태라면 속도 0
+    public void update() {
+        updateStunStatus();
+
+        if (isStunned) {
+            speed = 0;
         } else {
             adjustSpeedBasedOnY();
         }
@@ -46,20 +59,44 @@ public class Duck {
 
     private void adjustSpeedBasedOnY() {
         double frameHeight = Framework.frameHeight;
-        speedManager.adjustSpeedBasedOnY(y, frameHeight);  // 속도 조정은 DuckSpeedManager에 맡김
-        speed = speedManager.getSpeed();  // 변경된 속도를 적용
+        speed = determineSpeed(frameHeight);
+    }
+    private int determineSpeed(double frameHeight) {
+        if (y < frameHeight * Y_THRESHOLDS[0]) {
+            return SPEED_FAST;
+        } else if (y < frameHeight * Y_THRESHOLDS[1]) {
+            return SPEED_MEDIUM;
+        } else if (y < frameHeight * Y_THRESHOLDS[2]) {
+            return SPEED_MEDIUM;
+        } else if (y < frameHeight * Y_THRESHOLDS[3]) {
+            return SPEED_SLOW;
+        } else if (y < frameHeight * Y_THRESHOLDS[4]) {
+            return SPEED_SLOW;
+        } else {
+            return SPEED_VERY_SLOW;
+        }
     }
 
     public void stun() {
-        state.stun(speed);
-        speed = 0; // 기절 상태로 전환
+        if (!isStunned) {
+            isStunned = true;
+            stunnedStartTime = System.nanoTime();
+            originalSpeed = speed;
+            speed = 0;
+        }
     }
 
+    public void updateStunStatus() {
+        if (isStunned && System.nanoTime() - stunnedStartTime >= STUN_DURATION) {
+            isStunned = false;
+            speed = originalSpeed;
+        }
+    }
     public boolean isStunned() {
-        return state.isStunned();
+        return isStunned;
     }
 
-    public BufferedImage getImage() {
+    public BufferedImage getImage() { //오리 이미지 반환
         return duckImg;
     }
 
