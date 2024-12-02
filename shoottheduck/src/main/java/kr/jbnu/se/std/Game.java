@@ -18,12 +18,18 @@ import javax.swing.JOptionPane;
 public class Game implements GameEventNotifier {
 
     private static final int MAX_RUNAWAY_DUCKS = 200; // 최대 도망가는 오리 수
-    private int runawayDucks, killedDucks, shoots; // 도망가는 오리 수, 죽인 오리 수, 총알 발사 횟수
-    private long lastTimeShoot, timeBetweenShots; // 마지막 총알 발사 시간, 두 발사 사이의 시간 간격
+    private int runawayDucks;// 도망가는 오리 수, 죽인 오리 수, 총알 발사 횟수
+    private int killedDucks;
+    private int shoots;
+    private long lastTimeShoot;// 마지막 총알 발사 시간
+    private long timeBetweenShots; // 두 발사 사이의 시간 간격
 
-    private static final int INITIAL_BOSS_SCORE = 500, BOSS_SCORE_INTERVAL = 5000; // 첫 보스 등장 점수, 보스 등장 간격
-    private int nextBossScore = INITIAL_BOSS_SCORE, currentStage = 1; // 다음 보스 등장 점수, 현재 스테이지
-    private boolean bossSpawned = false, bossDefeated = false; // 보스 스폰 여부, 보스 처치 여부
+    private static final int INITIAL_BOSS_SCORE = 500;  // 첫 보스 등장 점수, 보스 등장 간격
+    private static final int BOSS_SCORE_INTERVAL = 5000;
+    private int nextBossScore = INITIAL_BOSS_SCORE;
+    private int currentStage = 1; // 다음 보스 등장 점수, 현재 스테이지
+    private boolean bossSpawned = false;
+    private boolean bossDefeated = false; // 보스 스폰 여부, 보스 처치 여부
 
     private PlayerScore playerScore; // 플레이어 객체
     private int level; // 게임 레벨
@@ -35,7 +41,8 @@ public class Game implements GameEventNotifier {
 
     private float grassPositionX = 0, grassSpeed = 0.1f; // 풀의 시작 위치, 풀의 이동 속도
     private int direction = 1; // 풀의 이동 방향(1: 오른쪽, -1: 왼쪽), 풀 이미지의 너비
-    private float maxDistance = 5, startPositionX; // 풀의 최대 이동 거리, 풀의 시작 위치
+    private float maxDistance = 5;
+    private float startPositionX; // 풀의 최대 이동 거리, 풀의 시작 위치
 
     private Random random; // 랜덤 객체
     private Font font; // 폰트 객체
