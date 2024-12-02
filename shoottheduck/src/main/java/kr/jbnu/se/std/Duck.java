@@ -61,6 +61,7 @@ public class Duck {
         double frameHeight = Framework.frameHeight;
         speed = determineSpeed(frameHeight);
     }
+
     private int determineSpeed(double frameHeight) {
         if (y < frameHeight * Y_THRESHOLDS[0]) {
             return SPEED_FAST;

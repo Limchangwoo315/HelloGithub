@@ -21,7 +21,7 @@ public class Framework extends Canvas implements GameObserver {
 
     @Override
     public void onGameStateChanged(String newState) {
-        // Do nothing
+        System.out.println("Game state changed to " + newState);
     }
 
     public static int frameWidth;
@@ -95,11 +95,9 @@ public class Framework extends Canvas implements GameObserver {
         }
     }
 
-    // 동기화된 상태 변경 메서드
     public static synchronized void changeGameState(GameState newState) {
         gameState = newState;
     }
-
     public static synchronized GameState getGameState() {
         return gameState;
     }
