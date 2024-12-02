@@ -34,9 +34,6 @@ public class PlayerScore {
         if (duckHit && !isBoss) {  // 보스가 아닌 오리를 맞췄을 때 콤보 증가
             comboMultiplier *= 1.15;
             comboCount++;
-        } else {  // 보스거나 오리를 맞추지 못한 경우 콤보 초기화
-            comboMultiplier = 1.0;
-            comboCount = 0;
         }
 
         // 최종 점수 계산
@@ -46,7 +43,6 @@ public class PlayerScore {
         updateHighestScore();  // 최고 점수 업데이트
     }
 
-    // 콤보 초기화
     public void resetCombo() {
         comboCount = 0;
         comboMultiplier = 1.0;

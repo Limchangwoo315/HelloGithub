@@ -23,10 +23,10 @@ public class Duck {
     private int originalSpeed;
 
     //속도 관련 상수
-    private static final int SPEED_FAST = -5;
-    private static final int SPEED_MEDIUM = -4;
-    private static final int SPEED_SLOW = -3;
-    private static final int SPEED_VERY_SLOW = -2;
+    private static final int SPEED_FAST = -6;
+    private static final int SPEED_MEDIUM = -5;
+    private static final int SPEED_SLOW = -2;
+    private static final int SPEED_VERY_SLOW = -1;
 
     // y 위치에 따른 범위 설정
     private static final double[] Y_THRESHOLDS = {0.15, 0.30, 0.58, 0.65, 0.70};
